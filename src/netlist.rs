@@ -39,7 +39,14 @@ impl Netlist {
         let tri_mat = TriMat::from_triplets((mat.size, mat.size), rows, cols, vals);
 
         let mat_a = tri_mat.to_csr();
-        let vec_b = CsVec::new(mat.size, v.idxs, v.vals);
+
+        v.sort_by_key(|(i, _)| *i);
+
+        let vec_b = CsVec::new(
+            mat.size,
+            v.iter().map(|(i, _)| *i).collect::<Vec<usize>>(),
+            v.iter().map(|(_, v)| *v).collect::<Vec<f64>>(),
+        );
 
         Equation { mat_a, vec_b }
     }

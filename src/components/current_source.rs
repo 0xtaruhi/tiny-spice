@@ -3,25 +3,24 @@ use crate::netlist::NodeId;
 use crate::matrix::build::VecPushWithNodeId;
 
 #[derive(Debug)]
-pub enum VoltageSourceType {
+pub enum CurrentSourceType {
     DC(f64),
     AC(f64, f64),
 }
 
-#[derive(Debug)]
-pub struct VoltageSource {
+pub struct CurrentSource {
     name: String,
     node_in: NodeId,
     node_out: NodeId,
-    source_type: VoltageSourceType,
+    source_type: CurrentSourceType,
 }
 
-impl VoltageSource {
+impl CurrentSource {
     pub fn new(
         name: String,
         node_in: NodeId,
         node_out: NodeId,
-        source_type: VoltageSourceType,
+        source_type: CurrentSourceType,
     ) -> Self {
         Self {
             name,
@@ -37,28 +36,28 @@ impl VoltageSource {
         let node_in = iter.next().unwrap().parse::<NodeId>().unwrap();
         let node_out = iter.next().unwrap().parse::<NodeId>().unwrap();
         let source_type = match iter.next().unwrap() {
-            "DC" => VoltageSourceType::DC(iter.next().unwrap().parse::<f64>().unwrap()),
-            "AC" => VoltageSourceType::AC(
+            "DC" => CurrentSourceType::DC(iter.next().unwrap().parse::<f64>().unwrap()),
+            "AC" => CurrentSourceType::AC(
                 iter.next().unwrap().parse::<f64>().unwrap(),
                 iter.next().unwrap().parse::<f64>().unwrap(),
             ),
-            _ => panic!("Invalid voltage source type"),
+            _ => panic!("Invalid current source type"),
         };
         Self::new(name, node_in, node_out, source_type)
     }
 }
 
-impl Component for VoltageSource {
+impl Component for CurrentSource {
     fn get_name(&self) -> &str {
         &self.name
     }
 
     fn get_type(&self) -> ComponentType {
-        ComponentType::VoltageSource
+        ComponentType::CurrentSource
     }
 }
 
-impl BasicComponent for VoltageSource {
+impl BasicComponent for CurrentSource {
     fn get_node_in(&self) -> NodeId {
         self.node_in
     }
@@ -69,22 +68,18 @@ impl BasicComponent for VoltageSource {
 
     fn get_base_value(&self) -> f64 {
         match self.source_type {
-            VoltageSourceType::DC(v) => v,
-            VoltageSourceType::AC(v, _) => v,
+            CurrentSourceType::DC(v) => v,
+            CurrentSourceType::AC(v, _) => v,
         }
     }
 
-    fn set_matrix_dc(&self, mat: &mut crate::matrix::build::MatrixTriplets<f64>, v: &mut crate::matrix::build::VecItems<f64>) {
-        let new_pos = mat.size;
-        mat.extend_size(1);
-
+    fn set_matrix_dc(
+        &self,
+        _mat: &mut crate::matrix::build::MatrixTriplets<f64>,
+        v: &mut crate::matrix::build::VecItems<f64>,
+    ) {
         let (node_in, node_out) = (self.get_node_in(), self.get_node_out());
-
-        mat.push_with_node_id(new_pos + 1, node_in, 1.);
-        mat.push_with_node_id(new_pos + 1, node_out, -1.);
-        mat.push_with_node_id(node_in, new_pos + 1, 1.);
-        mat.push_with_node_id(node_out, new_pos + 1, -1.);
-
-        v.push((new_pos, self.get_base_value()));
+        v.push_with_node_id(node_in, -self.get_base_value());
+        v.push_with_node_id(node_out, self.get_base_value());
     }
 }

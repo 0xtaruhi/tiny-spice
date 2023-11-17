@@ -20,11 +20,7 @@ impl Resistor {
     }
 
     pub fn parse(s: &str) -> Self {
-        let mut iter = s.split_whitespace();
-        let name = iter.next().unwrap().to_string();
-        let node_in = iter.next().unwrap().parse::<NodeId>().unwrap();
-        let node_out = iter.next().unwrap().parse::<NodeId>().unwrap();
-        let value = iter.next().unwrap().parse::<f64>().unwrap();
+        let (name, node_in, node_out, value) = super::base::basic_component_parse(s);
         Self::new(name, node_in, node_out, value)
     }
 }
@@ -52,7 +48,11 @@ impl BasicComponent for Resistor {
         self.value
     }
 
-    fn set_matrix_dc(&self, mat: &mut crate::matrix::build::MatrixTriplets<f64>, _v: &mut crate::matrix::build::VecItems<f64>) {
+    fn set_matrix_dc(
+        &self,
+        mat: &mut crate::matrix::build::MatrixTriplets<f64>,
+        _v: &mut crate::matrix::build::VecItems<f64>,
+    ) {
         let g = 1. / self.get_base_value();
 
         let (node_in, node_out) = (self.get_node_in(), self.get_node_out());

@@ -1,4 +1,5 @@
 use crate::components::base::BasicComponent;
+use crate::components::current_source::CurrentSource;
 use crate::components::resistor::Resistor;
 use crate::components::voltage_source::VoltageSource;
 
@@ -62,6 +63,11 @@ impl Parser {
                     let voltage_source = VoltageSource::parse(trimmed_line);
                     update_node_info_with_basic_component(&voltage_source);
                     basic_components.push(Box::new(voltage_source));
+                }
+                'I' => {
+                    let current_source = CurrentSource::parse(trimmed_line);
+                    update_node_info_with_basic_component(&current_source);
+                    basic_components.push(Box::new(current_source));
                 }
                 _ => {
                     return Err(format!(

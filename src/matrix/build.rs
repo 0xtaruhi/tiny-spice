@@ -7,22 +7,18 @@ pub struct MatrixTriplets<T> {
     pub size: usize,
 }
 
-pub struct VecItems<T> {
-    pub idxs: Vec<usize>,
-    pub vals: Vec<T>,
+pub type VecItems<T> = Vec<(usize, T)>;
+
+pub trait VecPushWithNodeId<T> {
+    fn push_with_node_id(&mut self, index: NodeId, val: T);
 }
 
-impl<T> VecItems<T> {
-    pub fn new() -> Self {
-        VecItems {
-            idxs: Vec::new(),
-            vals: Vec::new(),
+impl<T> VecPushWithNodeId<T> for VecItems<T> {
+    fn push_with_node_id(&mut self, index: NodeId, val: T) {
+        if index == 0 {
+            return;
         }
-    }
-
-    pub fn push(&mut self, index: usize, val: T) {
-        self.idxs.push(index);
-        self.vals.push(val);
+        self.push((index - 1, val));
     }
 }
 
