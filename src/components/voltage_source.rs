@@ -55,13 +55,6 @@ impl Component for VoltageSource {
     fn get_type(&self) -> ComponentType {
         ComponentType::VoltageSource
     }
-
-    fn get_base_value(&self) -> f64 {
-        match self.source_type {
-            VoltageSourceType::DC(v) => v,
-            VoltageSourceType::AC(v, _) => v,
-        }
-    }
 }
 
 impl BasicComponent for VoltageSource {
@@ -71,5 +64,26 @@ impl BasicComponent for VoltageSource {
 
     fn get_node_out(&self) -> NodeId {
         self.node_out
+    }
+
+    fn get_base_value(&self) -> f64 {
+        match self.source_type {
+            VoltageSourceType::DC(v) => v,
+            VoltageSourceType::AC(v, _) => v,
+        }
+    }
+
+    fn set_matrix_dc(&self, mat: &mut crate::matrix::build::MatrixTriplets<f64>, v: &mut crate::matrix::build::VecItems<f64>) {
+        let new_pos = mat.size;
+        mat.extend_size(1);
+
+        let (node_in, node_out) = (self.get_node_in(), self.get_node_out());
+
+        mat.push_with_node_id(new_pos + 1, node_in, 1.);
+        mat.push_with_node_id(new_pos + 1, node_out, -1.);
+        mat.push_with_node_id(node_in, new_pos + 1, 1.);
+        mat.push_with_node_id(node_out, new_pos + 1, -1.);
+
+        v.push(new_pos, self.get_base_value());
     }
 }

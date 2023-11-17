@@ -65,7 +65,7 @@ impl Analyzer {
     }
 
     fn analyze_dc(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let result = NewtonSolver::solve(&self.netlist)?;
+        let result = NewtonSolver::solve(self.netlist.get_equation())?;
         let node_num = self.netlist.node_num;
 
         for node_id in 0..(node_num - 1) {

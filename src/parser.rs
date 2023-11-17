@@ -1,7 +1,6 @@
 use crate::components::base::BasicComponent;
 use crate::components::resistor::Resistor;
 use crate::components::voltage_source::VoltageSource;
-use crate::matrix::build::MatrixUpdatableComponent;
 
 use std::io::BufRead;
 use std::{fs::File, path::PathBuf};
@@ -11,7 +10,7 @@ pub struct Parser {
 }
 
 pub struct ParsedInfo {
-    pub components: Vec<Box<dyn MatrixUpdatableComponent>>,
+    pub basic_components: Vec<Box<dyn BasicComponent>>,
     pub tasks: Vec<super::task::Task>,
     pub node_num: usize,
     pub max_node_id: usize,
@@ -32,7 +31,7 @@ impl Parser {
         let mut max_node_id = 0;
 
         let file = open_file(&self.file)?;
-        let mut components: Vec<Box<dyn MatrixUpdatableComponent>> = Vec::new();
+        let mut basic_components: Vec<Box<dyn BasicComponent>> = Vec::new();
 
         let lines = std::io::BufReader::new(file).lines();
 
@@ -57,12 +56,12 @@ impl Parser {
                 'R' => {
                     let resistor = Resistor::parse(trimmed_line);
                     update_node_info_with_basic_component(&resistor);
-                    components.push(Box::new(resistor));
+                    basic_components.push(Box::new(resistor));
                 }
                 'V' => {
                     let voltage_source = VoltageSource::parse(trimmed_line);
                     update_node_info_with_basic_component(&voltage_source);
-                    components.push(Box::new(voltage_source));
+                    basic_components.push(Box::new(voltage_source));
                 }
                 _ => {
                     return Err(format!(
@@ -77,7 +76,7 @@ impl Parser {
         }
 
         Ok(ParsedInfo {
-            components: components,
+            basic_components: basic_components,
             tasks: vec![],
             node_num: node_set.len(),
             max_node_id: max_node_id,

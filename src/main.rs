@@ -33,13 +33,7 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Parse successful");
 
-    let netlist = netlist::Netlist::new(&parsed_info).map_err(|e| {
-        error!("Failed to build netlist: {}", e);
-        e
-    })?;
-
-    info!("Netlist build successful");
-
+    let netlist = netlist::Netlist::new(parsed_info);
 
     let mode: analyze::Mode = {
         if let Some(m) = opts.mode {
