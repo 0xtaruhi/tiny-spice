@@ -3,7 +3,7 @@ pub enum Task {
 }
 
 impl Task {
-    fn run(&self) ->  Result<(), Box<dyn std::error::Error>> {
+    fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             Task::Plot() => {
                 println!("Plotting!");

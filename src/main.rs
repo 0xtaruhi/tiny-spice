@@ -5,7 +5,7 @@ use std::time::Instant;
 use log::{error, info};
 
 mod analyze;
-mod components;
+mod elements;
 mod matrix;
 mod netlist;
 mod parser;
@@ -13,11 +13,11 @@ mod solver;
 mod task;
 
 #[derive(Parser, Debug)]
-#[clap(author="0xtaruhi", version, about)]
+#[clap(author = "0xtaruhi", version, about)]
 struct Opts {
     #[clap(short, long)]
     mode: Option<String>,
-    
+
     #[clap(short, long)]
     disp: Option<usize>,
 

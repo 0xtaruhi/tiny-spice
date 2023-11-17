@@ -1,6 +1,6 @@
-use super::base::{BasicComponent, Component, ComponentType};
-use crate::netlist::NodeId;
+use super::base::{Element, ElementType, LinearElement, MatrixSettable, TwoPortElement};
 use crate::matrix::build::VecPushWithNodeId;
+use crate::netlist::NodeId;
 
 #[derive(Debug)]
 pub enum CurrentSourceType {
@@ -47,17 +47,17 @@ impl CurrentSource {
     }
 }
 
-impl Component for CurrentSource {
+impl Element for CurrentSource {
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn get_type(&self) -> ComponentType {
-        ComponentType::CurrentSource
+    fn get_type(&self) -> ElementType {
+        ElementType::CurrentSource
     }
 }
 
-impl BasicComponent for CurrentSource {
+impl TwoPortElement for CurrentSource {
     fn get_node_in(&self) -> NodeId {
         self.node_in
     }
@@ -65,14 +65,18 @@ impl BasicComponent for CurrentSource {
     fn get_node_out(&self) -> NodeId {
         self.node_out
     }
+}
 
+impl LinearElement for CurrentSource {
     fn get_base_value(&self) -> f64 {
         match self.source_type {
             CurrentSourceType::DC(v) => v,
             CurrentSourceType::AC(v, _) => v,
         }
     }
+}
 
+impl MatrixSettable for CurrentSource {
     fn set_matrix_dc(
         &self,
         _mat: &mut crate::matrix::build::MatrixTriplets<f64>,

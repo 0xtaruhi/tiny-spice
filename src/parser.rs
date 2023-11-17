@@ -1,7 +1,8 @@
-use crate::components::base::BasicComponent;
-use crate::components::current_source::CurrentSource;
-use crate::components::resistor::Resistor;
-use crate::components::voltage_source::VoltageSource;
+use crate::elements::base::{LinearElement, NonLineaerTwoPortElement, TwoPortElement};
+use crate::elements::capacitor::Capacitor;
+use crate::elements::current_source::CurrentSource;
+use crate::elements::resistor::Resistor;
+use crate::elements::voltage_source::VoltageSource;
 
 use std::io::BufRead;
 use std::{fs::File, path::PathBuf};
@@ -11,7 +12,8 @@ pub struct Parser {
 }
 
 pub struct ParsedInfo {
-    pub basic_components: Vec<Box<dyn BasicComponent>>,
+    pub linear_elements: Vec<Box<dyn LinearElement>>,
+    pub non_linear_two_port_elements: Vec<Box<dyn NonLineaerTwoPortElement>>,
     pub tasks: Vec<super::task::Task>,
     pub node_num: usize,
     pub max_node_id: usize,
@@ -32,7 +34,8 @@ impl Parser {
         let mut max_node_id = 0;
 
         let file = open_file(&self.file)?;
-        let mut basic_components: Vec<Box<dyn BasicComponent>> = Vec::new();
+        let mut linear_elements: Vec<Box<dyn LinearElement>> = Vec::new();
+        let mut non_linear_two_port_elements: Vec<Box<dyn NonLineaerTwoPortElement>> = Vec::new();
 
         let lines = std::io::BufReader::new(file).lines();
 
@@ -46,32 +49,37 @@ impl Parser {
 
             let first_char = trimmed_line.chars().next().unwrap();
 
-            let mut update_node_info_with_basic_component = |component: &dyn BasicComponent| {
-                node_set.insert(component.get_node_in());
-                node_set.insert(component.get_node_out());
-                max_node_id = max_node_id.max(component.get_node_in());
-                max_node_id = max_node_id.max(component.get_node_out());
+            let mut update_node_info_with_two_port_element = |element: &dyn TwoPortElement| {
+                node_set.insert(element.get_node_in());
+                node_set.insert(element.get_node_out());
+                max_node_id = max_node_id.max(element.get_node_in());
+                max_node_id = max_node_id.max(element.get_node_out());
             };
 
             match first_char.to_ascii_uppercase() {
                 'R' => {
                     let resistor = Resistor::parse(trimmed_line);
-                    update_node_info_with_basic_component(&resistor);
-                    basic_components.push(Box::new(resistor));
+                    update_node_info_with_two_port_element(&resistor);
+                    linear_elements.push(Box::new(resistor));
                 }
                 'V' => {
                     let voltage_source = VoltageSource::parse(trimmed_line);
-                    update_node_info_with_basic_component(&voltage_source);
-                    basic_components.push(Box::new(voltage_source));
+                    update_node_info_with_two_port_element(&voltage_source);
+                    linear_elements.push(Box::new(voltage_source));
                 }
                 'I' => {
                     let current_source = CurrentSource::parse(trimmed_line);
-                    update_node_info_with_basic_component(&current_source);
-                    basic_components.push(Box::new(current_source));
+                    update_node_info_with_two_port_element(&current_source);
+                    linear_elements.push(Box::new(current_source));
+                }
+                'C' => {
+                    let capacitor = Capacitor::parse(trimmed_line);
+                    update_node_info_with_two_port_element(&capacitor);
+                    non_linear_two_port_elements.push(Box::new(capacitor));
                 }
                 _ => {
                     return Err(format!(
-                        "Invalid component type: {}, {}:{}",
+                        "Invalid element type: {}, {}:{}",
                         first_char,
                         self.file.display(),
                         line_no
@@ -82,7 +90,8 @@ impl Parser {
         }
 
         Ok(ParsedInfo {
-            basic_components: basic_components,
+            linear_elements: linear_elements,
+            non_linear_two_port_elements: non_linear_two_port_elements,
             tasks: vec![],
             node_num: node_set.len(),
             max_node_id: max_node_id,

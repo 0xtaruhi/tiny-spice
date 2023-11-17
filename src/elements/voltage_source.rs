@@ -1,6 +1,5 @@
-use super::base::{BasicComponent, Component, ComponentType};
+use super::base::{Element, ElementType, LinearElement, MatrixSettable, TwoPortElement};
 use crate::netlist::NodeId;
-use crate::matrix::build::VecPushWithNodeId;
 
 #[derive(Debug)]
 pub enum VoltageSourceType {
@@ -48,17 +47,17 @@ impl VoltageSource {
     }
 }
 
-impl Component for VoltageSource {
+impl Element for VoltageSource {
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn get_type(&self) -> ComponentType {
-        ComponentType::VoltageSource
+    fn get_type(&self) -> ElementType {
+        ElementType::VoltageSource
     }
 }
 
-impl BasicComponent for VoltageSource {
+impl TwoPortElement for VoltageSource {
     fn get_node_in(&self) -> NodeId {
         self.node_in
     }
@@ -66,15 +65,23 @@ impl BasicComponent for VoltageSource {
     fn get_node_out(&self) -> NodeId {
         self.node_out
     }
+}
 
+impl LinearElement for VoltageSource {
     fn get_base_value(&self) -> f64 {
         match self.source_type {
             VoltageSourceType::DC(v) => v,
             VoltageSourceType::AC(v, _) => v,
         }
     }
+}
 
-    fn set_matrix_dc(&self, mat: &mut crate::matrix::build::MatrixTriplets<f64>, v: &mut crate::matrix::build::VecItems<f64>) {
+impl MatrixSettable for VoltageSource {
+    fn set_matrix_dc(
+        &self,
+        mat: &mut crate::matrix::build::MatrixTriplets<f64>,
+        v: &mut crate::matrix::build::VecItems<f64>,
+    ) {
         let new_pos = mat.size;
         mat.extend_size(1);
 

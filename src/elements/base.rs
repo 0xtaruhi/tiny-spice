@@ -1,30 +1,44 @@
-use crate::{netlist::NodeId, matrix::build::{MatrixTriplets, VecItems}};
+use crate::{
+    matrix::build::{MatrixTriplets, VecItems},
+    netlist::NodeId,
+};
 
-pub enum ComponentType {
+pub enum ElementType {
     Resistor,
     VoltageSource,
     CurrentSource,
     Capacitor,
 }
 
-pub trait Component {
+pub trait Element {
     fn get_name(&self) -> &str;
 
-    fn get_type(&self) -> ComponentType;
-
+    fn get_type(&self) -> ElementType;
 }
 
-pub trait BasicComponent: Component {
+pub trait TwoPortElement: Element {
     fn get_node_in(&self) -> NodeId;
 
     fn get_node_out(&self) -> NodeId;
-    
-    fn get_base_value(&self) -> f64;
+}
 
+pub trait LinearElement: TwoPortElement + MatrixSettable {
+    fn get_base_value(&self) -> f64;
+}
+
+pub trait NonLineaerTwoPortElement: TwoPortElement + MatrixSettable {
+    fn get_base_value(&self) -> f64;
+}
+
+pub trait NonLinearMultiPortElement: Element + MatrixSettable {}
+
+pub trait MatrixSettable {
     fn set_matrix_dc(&self, mat: &mut MatrixTriplets<f64>, v: &mut VecItems<f64>);
 }
 
-pub fn basic_component_parse(s: &str) -> (String, NodeId, NodeId, f64) {
+pub trait NonLinearComponent: Element {}
+
+pub fn general_linear_element_parse(s: &str) -> (String, NodeId, NodeId, f64) {
     let mut iter = s.split_whitespace();
     let name = iter.next().unwrap().to_string();
     let node_in = iter.next().unwrap().parse::<NodeId>().unwrap();

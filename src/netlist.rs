@@ -1,6 +1,6 @@
 pub type NodeId = usize;
 use crate::{
-    components::base::BasicComponent,
+    elements::base::{LinearElement, NonLineaerTwoPortElement},
     matrix::build::{MatrixTriplets, VecItems},
     parser::ParsedInfo,
 };
@@ -8,7 +8,8 @@ use sprs::{CsMat, CsVec, TriMat};
 
 pub struct Netlist {
     pub node_num: usize, // include ground node
-    pub basic_components: Vec<Box<dyn BasicComponent>>,
+    pub linear_elements: Vec<Box<dyn LinearElement>>,
+    pub nonlinear_two_port_elements: Vec<Box<dyn NonLineaerTwoPortElement>>,
 }
 
 #[derive(Debug)]
@@ -20,10 +21,12 @@ pub struct Equation {
 impl Netlist {
     pub fn new(parsed_info: ParsedInfo) -> Netlist {
         let node_num = parsed_info.node_num;
-        let basic_components = parsed_info.basic_components;
+        let linear_elements = parsed_info.linear_elements;
+        let nonlinear_two_port_elements = parsed_info.non_linear_two_port_elements;
         Netlist {
             node_num,
-            basic_components,
+            linear_elements,
+            nonlinear_two_port_elements,
         }
     }
 
@@ -31,8 +34,12 @@ impl Netlist {
         let mut mat = MatrixTriplets::new(self.node_num - 1);
         let mut v = VecItems::new();
 
-        self.basic_components.iter().for_each(|component| {
-            component.set_matrix_dc(&mut mat, &mut v);
+        self.linear_elements.iter().for_each(|element| {
+            element.set_matrix_dc(&mut mat, &mut v);
+        });
+
+        self.nonlinear_two_port_elements.iter().for_each(|element| {
+            element.set_matrix_dc(&mut mat, &mut v);
         });
 
         let (rows, cols, vals) = (mat.rows, mat.cols, mat.vals);

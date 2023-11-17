@@ -87,9 +87,7 @@ impl LUSolver {
 }
 
 impl Solver for NewtonSolver {
-    fn solve(
-        e: Equation,
-    ) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
+    fn solve(e: Equation) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
         let mat_a = e.mat_a.clone();
         let vec_b = e.vec_b.clone();
 
