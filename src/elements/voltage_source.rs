@@ -65,9 +65,6 @@ impl TwoPortElement for VoltageSource {
     fn get_node_out(&self) -> NodeId {
         self.node_out
     }
-}
-
-impl LinearElement for VoltageSource {
     fn get_base_value(&self) -> f64 {
         match self.source_type {
             VoltageSourceType::DC(v) => v,
@@ -95,3 +92,5 @@ impl MatrixSettable for VoltageSource {
         v.push((new_pos, self.get_base_value()));
     }
 }
+
+impl LinearElement for VoltageSource {}

@@ -21,23 +21,17 @@ pub trait TwoPortElement: Element {
     fn get_node_in(&self) -> NodeId;
 
     fn get_node_out(&self) -> NodeId;
-}
 
-pub trait LinearElement: TwoPortElement + MatrixSettable {
     fn get_base_value(&self) -> f64;
 }
 
-pub trait NonLineaerTwoPortElement: TwoPortElement + MatrixSettable {
-    fn get_base_value(&self) -> f64;
-}
-
-pub trait NonLinearMultiPortElement: Element + MatrixSettable {}
+pub trait LinearElement: TwoPortElement + MatrixSettable {}
 
 pub trait MatrixSettable {
     fn set_matrix_dc(&self, mat: &mut MatrixTriplets<f64>, v: &mut VecItems<f64>);
 }
 
-pub trait NonLinearComponent: Element {}
+pub trait NonLinearElement: Element + MatrixSettable {}
 
 pub fn general_linear_element_parse(s: &str) -> (String, NodeId, NodeId, f64) {
     let mut iter = s.split_whitespace();

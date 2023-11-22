@@ -1,4 +1,4 @@
-use super::base::{Element, ElementType, LinearElement, MatrixSettable, TwoPortElement};
+use super::base::{Element, ElementType, MatrixSettable, TwoPortElement, LinearElement};
 use crate::matrix::build::VecPushWithNodeId;
 use crate::netlist::NodeId;
 
@@ -65,9 +65,6 @@ impl TwoPortElement for CurrentSource {
     fn get_node_out(&self) -> NodeId {
         self.node_out
     }
-}
-
-impl LinearElement for CurrentSource {
     fn get_base_value(&self) -> f64 {
         match self.source_type {
             CurrentSourceType::DC(v) => v,
@@ -87,3 +84,5 @@ impl MatrixSettable for CurrentSource {
         v.push_with_node_id(node_out, self.get_base_value());
     }
 }
+
+impl LinearElement for CurrentSource {}

@@ -1,4 +1,4 @@
-use super::base::{Element, ElementType, MatrixSettable, NonLineaerTwoPortElement, TwoPortElement};
+use super::base::{Element, ElementType, MatrixSettable, TwoPortElement, NonLinearElement};
 use crate::netlist::NodeId;
 
 #[derive(Debug)]
@@ -42,9 +42,6 @@ impl TwoPortElement for Inductor {
     fn get_node_out(&self) -> NodeId {
         self.node_out
     }
-}
-
-impl NonLineaerTwoPortElement for Inductor {
     fn get_base_value(&self) -> f64 {
         self.value
     }
@@ -67,3 +64,5 @@ impl MatrixSettable for Inductor {
         mat.push_with_node_id(node_out, new_pos + 1, -1.);
     }
 }
+
+impl NonLinearElement for Inductor {}
