@@ -1,4 +1,4 @@
-use super::base::{Element, ElementType, MatrixSettable, TwoPortElement, LinearElement};
+use super::base::{Element, ElementType, LinearElement, MatrixSettable, TwoPortElement};
 use crate::matrix::build::VecPushWithNodeId;
 use crate::netlist::NodeId;
 
@@ -54,6 +54,10 @@ impl Element for CurrentSource {
 
     fn get_type(&self) -> ElementType {
         ElementType::CurrentSource
+    }
+
+    fn get_nodes(&self) -> Vec<NodeId> {
+        vec![self.node_in, self.node_out]
     }
 }
 

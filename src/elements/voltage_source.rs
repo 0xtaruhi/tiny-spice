@@ -55,6 +55,10 @@ impl Element for VoltageSource {
     fn get_type(&self) -> ElementType {
         ElementType::VoltageSource
     }
+
+    fn get_nodes(&self) -> Vec<NodeId> {
+        vec![self.node_in, self.node_out]
+    }
 }
 
 impl TwoPortElement for VoltageSource {

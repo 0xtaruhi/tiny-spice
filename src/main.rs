@@ -4,6 +4,9 @@ use std::time::Instant;
 
 use log::{error, info};
 
+#[macro_use]
+extern crate lazy_static;
+
 mod analyze;
 mod elements;
 mod matrix;

@@ -1,4 +1,7 @@
-use crate::{matrix::decomp::LUDecomp, netlist::Equation};
+use crate::{
+    matrix::decomp::LUDecomp,
+    netlist::{Equation, Netlist},
+};
 use log::error;
 use sprs::{CsMat, CsVec};
 
@@ -94,9 +97,14 @@ impl LUSolver {
 }
 
 impl Solver for NewtonSolver {
-    fn solve(e: Equation) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
-        let mat_a = e.mat_a.clone();
-        let vec_b = e.vec_b.clone();
+    fn solve(netlist: &Netlist) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
+        let e = netlist.get_equation();
+        let mut mat_a = e.mat_a.clone();
+        let mut vec_b = e.vec_b.clone();
+
+        for non_linear_element in &netlist.non_linear_elements {
+            non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b);
+        }
 
         let x = LUSolver::solve(&mat_a, &vec_b);
 

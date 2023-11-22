@@ -1,7 +1,9 @@
-use crate::elements::base::{LinearElement, TwoPortElement, NonLinearElement};
+use crate::elements;
+use crate::elements::base::{Element, LinearElement, NonLinearElement};
 use crate::elements::capacitor::Capacitor;
 use crate::elements::current_source::CurrentSource;
 use crate::elements::inductor::Inductor;
+use crate::elements::mosfet::{Mosfet, MosfetModel};
 use crate::elements::resistor::Resistor;
 use crate::elements::voltage_source::VoltageSource;
 
@@ -50,38 +52,61 @@ impl Parser {
 
             let first_char = trimmed_line.chars().next().unwrap();
 
-            let mut update_node_info_with_two_port_element = |element: &dyn TwoPortElement| {
-                node_set.insert(element.get_node_in());
-                node_set.insert(element.get_node_out());
-                max_node_id = max_node_id.max(element.get_node_in());
-                max_node_id = max_node_id.max(element.get_node_out());
+            let mut update_node_info_with_new_element = |element: &dyn Element| {
+                for node in element.get_nodes() {
+                    node_set.insert(node);
+                    max_node_id = max_node_id.max(node);
+                }
             };
 
             match first_char.to_ascii_uppercase() {
                 'R' => {
                     let resistor = Resistor::parse(trimmed_line);
-                    update_node_info_with_two_port_element(&resistor);
+                    update_node_info_with_new_element(&resistor);
                     linear_elements.push(Box::new(resistor));
                 }
                 'V' => {
                     let voltage_source = VoltageSource::parse(trimmed_line);
-                    update_node_info_with_two_port_element(&voltage_source);
+                    update_node_info_with_new_element(&voltage_source);
                     linear_elements.push(Box::new(voltage_source));
                 }
                 'I' => {
                     let current_source = CurrentSource::parse(trimmed_line);
-                    update_node_info_with_two_port_element(&current_source);
+                    update_node_info_with_new_element(&current_source);
                     linear_elements.push(Box::new(current_source));
                 }
                 'C' => {
                     let capacitor = Capacitor::parse(trimmed_line);
-                    update_node_info_with_two_port_element(&capacitor);
+                    update_node_info_with_new_element(&capacitor);
                     non_linear_elements.push(Box::new(capacitor));
                 }
                 'L' => {
                     let inductor = Inductor::parse(trimmed_line);
-                    update_node_info_with_two_port_element(&inductor);
+                    update_node_info_with_new_element(&inductor);
                     non_linear_elements.push(Box::new(inductor));
+                }
+                'M' => {
+                    let mosfet = Mosfet::parse(trimmed_line);
+                    update_node_info_with_new_element(&mosfet);
+                    non_linear_elements.push(Box::new(mosfet));
+                }
+                '.' => {
+                    let word = trimmed_line.split_whitespace().next().unwrap();
+                    match word {
+                        ".MODEL" => {
+                            let (model_id, mosfet_model) = MosfetModel::parse(trimmed_line);
+                            elements::mosfet::add_mosfet_model(model_id, mosfet_model);
+                        }
+                        _ => {
+                            return Err(format!(
+                                "Invalid directive: {}, {}:{}",
+                                word,
+                                self.file.display(),
+                                line_no
+                            )
+                            .into());
+                        }
+                    }
                 }
                 _ => {
                     return Err(format!(

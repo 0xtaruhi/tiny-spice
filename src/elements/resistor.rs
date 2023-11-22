@@ -33,6 +33,10 @@ impl Element for Resistor {
     fn get_type(&self) -> ElementType {
         ElementType::Resistor
     }
+
+    fn get_nodes(&self) -> Vec<NodeId> {
+        vec![self.node_in, self.node_out]
+    }
 }
 
 impl TwoPortElement for Resistor {
@@ -48,7 +52,6 @@ impl TwoPortElement for Resistor {
         self.value
     }
 }
-
 
 impl MatrixSettable for Resistor {
     fn set_matrix_dc(

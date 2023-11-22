@@ -1,4 +1,6 @@
-use super::base::{Element, ElementType, MatrixSettable, TwoPortElement, NonLinearElement};
+use super::base::{
+    Element, ElementType, MatrixSettable, MatrixUpdatable, NonLinearElement, TwoPortElement,
+};
 use crate::netlist::NodeId;
 
 #[derive(Debug)]
@@ -29,8 +31,13 @@ impl Element for Inductor {
     fn get_name(&self) -> &str {
         &self.name
     }
+
     fn get_type(&self) -> ElementType {
         ElementType::Inductor
+    }
+
+    fn get_nodes(&self) -> Vec<NodeId> {
+        vec![self.node_in, self.node_out]
     }
 }
 
@@ -63,6 +70,10 @@ impl MatrixSettable for Inductor {
         mat.push_with_node_id(node_in, new_pos + 1, 1.);
         mat.push_with_node_id(node_out, new_pos + 1, -1.);
     }
+}
+
+impl MatrixUpdatable for Inductor {
+    fn update_matrix_dc(&self, _mat: &mut sprs::CsMat<f64>, _v: &mut sprs::CsVec<f64>) {}
 }
 
 impl NonLinearElement for Inductor {}

@@ -1,0 +1,9 @@
+* NMOS
+* example 2
+
+VDD 3 0 DC 3
+Vin 1 0 DC 1.2
+M1 2 1 0 n 10e-6 0.35e-6 2
+R1 3 2 3000
+
+.MODEL 2 VT 0.83 MU 1.5e-1 COX 0.3e-4 LAMBDA 0.05 CJ0 4.0e-14

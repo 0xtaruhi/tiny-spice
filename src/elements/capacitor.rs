@@ -1,4 +1,6 @@
-use super::base::{Element, ElementType, MatrixSettable, TwoPortElement, NonLinearElement};
+use super::base::{
+    Element, ElementType, MatrixSettable, MatrixUpdatable, NonLinearElement, TwoPortElement,
+};
 use crate::netlist::NodeId;
 
 #[derive(Debug)]
@@ -28,8 +30,13 @@ impl Element for Capacitor {
     fn get_name(&self) -> &str {
         &self.name
     }
+
     fn get_type(&self) -> ElementType {
         ElementType::Capacitor
+    }
+
+    fn get_nodes(&self) -> Vec<NodeId> {
+        vec![self.node_in, self.node_out]
     }
 }
 
@@ -53,6 +60,10 @@ impl MatrixSettable for Capacitor {
         _v: &mut crate::matrix::build::VecItems<f64>,
     ) {
     }
+}
+
+impl MatrixUpdatable for Capacitor {
+    fn update_matrix_dc(&self, mat: &mut sprs::CsMat<f64>, v: &mut sprs::CsVec<f64>) {}
 }
 
 impl NonLinearElement for Capacitor {}
