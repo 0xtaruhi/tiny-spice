@@ -3,7 +3,9 @@ use std::ops::Neg;
 
 use log::debug;
 use num_traits::{Num, NumOps};
+use rayon::prelude::*;
 use sprs::CsMat;
+use std::sync::{Arc, RwLock};
 
 pub trait LUDecomp {
     type ResultType;
@@ -25,7 +27,10 @@ where
         + Num
         + NumOps
         + fmt::Display
-        + Neg<Output = T>,
+        + fmt::Debug
+        + Neg<Output = T>
+        + Send
+        + Sync,
 {
     type ResultType = CsMat<T>;
 
@@ -74,8 +79,8 @@ where
         assert!(self.cols() == self.rows(), "Matrix must be square");
         let size = self.rows();
 
-        let mut l: CsMat<T> = CsMat::eye(size);
-        let mut u: CsMat<T> = CsMat::empty(self.storage(), size);
+        let l: Arc<RwLock<CsMat<T>>> = Arc::new(RwLock::new(CsMat::eye(size)));
+        let u: Arc<RwLock<CsMat<T>>> = Arc::new(RwLock::new(CsMat::empty(self.storage(), size)));
 
         let get_self_mat_val = |row, col| {
             if let Some(m) = &reorder_map {
@@ -92,43 +97,50 @@ where
                 for col in row..size {
                     let orig_val = get_or_default(get_self_mat_val(row, col));
                     let prev_sum = (0..row)
+                        .into_par_iter()
                         .map(|i| {
-                            let l_val = get_or_default(l.get(row, i));
-                            let u_val = get_or_default(u.get(i, col));
+                            let l_val = get_or_default(l.read().unwrap().get(row, i));
+                            let u_val = get_or_default(u.read().unwrap().get(i, col));
                             l_val * u_val
                         })
-                        .fold(Default::default(), |acc: T, x| acc + x);
+                        .reduce(|| Default::default(), |acc: T, x| acc + x);
 
                     let u_val = orig_val - prev_sum;
-                    u.insert(row, col, u_val);
+                    u.write().unwrap().insert(row, col, u_val);
+
                 }
             }
 
             {
                 // L
                 let col = s;
-                for row in (col + 1)..size {
+                // for row in ((col + 1)..size).into_iter() {
+                ((col + 1)..size).into_par_iter().for_each(|row| {
                     let orig_val = get_or_default(get_self_mat_val(row, col));
                     let prev_sum = (0..col)
+                        .into_par_iter()
                         .map(|i| {
-                            let l_val = get_or_default(l.get(row, i));
-                            let u_val = get_or_default(u.get(i, col));
+                            let l_val = get_or_default(l.read().unwrap().get(row, i));
+                            let u_val = get_or_default(u.read().unwrap().get(i, col));
                             l_val * u_val
                         })
-                        .fold(Default::default(), |acc: T, x| acc + x);
+                        .reduce(|| Default::default(), |acc: T, x| acc + x);
 
-                    let u_col_col = get_or_default(u.get(col, col));
+                    let u_col_col = get_or_default(u.read().unwrap().get(col, col));
 
                     if u_col_col == Default::default() {
-                        return Err("Matrix is singular".into());
+                        panic!("Matrix is singular");
                     }
 
                     let l_val = (orig_val - prev_sum) / u_col_col;
-                    l.insert(row, col, l_val);
-                }
+                    l.write().unwrap().insert(row, col, l_val);
+                });
             }
         }
-        debug!("\nL:{}\nU:{}\n", l.to_dense(), u.to_dense());
+
+        let l = Arc::try_unwrap(l).unwrap().into_inner().unwrap();
+        let u = Arc::try_unwrap(u).unwrap().into_inner().unwrap();
+        // debug!("\nL:{}\nU:{}\n", l.to_dense(), u.to_dense());
 
         Ok((l, u))
     }
