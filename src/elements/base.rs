@@ -8,6 +8,7 @@ pub enum ElementType {
     VoltageSource,
     CurrentSource,
     Capacitor,
+    Inductor,
 }
 
 pub trait Element {

@@ -4,6 +4,7 @@ use crate::{
     matrix::build::{MatrixTriplets, VecItems},
     parser::ParsedInfo,
 };
+use log::debug;
 use sprs::{CsMat, CsVec, TriMat};
 
 pub struct Netlist {
@@ -54,6 +55,8 @@ impl Netlist {
             v.iter().map(|(i, _)| *i).collect::<Vec<usize>>(),
             v.iter().map(|(_, v)| *v).collect::<Vec<f64>>(),
         );
+
+        debug!("mat:\n{}, vec:\n{}", mat_a.to_dense(), vec_b.to_dense());
 
         Equation { mat_a, vec_b }
     }

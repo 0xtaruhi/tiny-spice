@@ -1,6 +1,7 @@
 use crate::elements::base::{LinearElement, NonLineaerTwoPortElement, TwoPortElement};
 use crate::elements::capacitor::Capacitor;
 use crate::elements::current_source::CurrentSource;
+use crate::elements::inductor::Inductor;
 use crate::elements::resistor::Resistor;
 use crate::elements::voltage_source::VoltageSource;
 
@@ -76,6 +77,11 @@ impl Parser {
                     let capacitor = Capacitor::parse(trimmed_line);
                     update_node_info_with_two_port_element(&capacitor);
                     non_linear_two_port_elements.push(Box::new(capacitor));
+                }
+                'L' => {
+                    let inductor = Inductor::parse(trimmed_line);
+                    update_node_info_with_two_port_element(&inductor);
+                    non_linear_two_port_elements.push(Box::new(inductor));
                 }
                 _ => {
                     return Err(format!(

@@ -1,4 +1,5 @@
 use crate::{matrix::decomp::LUDecomp, netlist::Equation};
+use log::error;
 use sprs::{CsMat, CsVec};
 
 use super::base::Solver;
@@ -21,8 +22,14 @@ where
 struct LUSolver {}
 
 impl LUSolver {
-    fn solve(mat: &CsMat<f64>, v: &CsVec<f64>) -> CsVec<f64> {
-        let (l, u) = mat.lu_decomp().unwrap();
+    fn solve(mat: &CsMat<f64>, v: &CsVec<f64>) -> Result<CsVec<f64>, Box<dyn std::error::Error>> {
+        let reorder_map = mat.get_reorder_map();
+
+        let (l, u) = mat.lu_decomp(Some(&reorder_map)).map_err(|e| {
+            error!("LU decomposition failed: {}", e);
+            e
+        })?;
+
         assert!(mat.rows() == mat.cols());
         let size = mat.rows();
 
@@ -44,7 +51,8 @@ impl LUSolver {
                 };
                 result.append(
                     row,
-                    (get_or_default(v.get(row)) - prev_sum) / get_or_default(l.get(row, row)),
+                    (get_or_default(v.get(reorder_map[row])) - prev_sum)
+                        / get_or_default(l.get(row, row)),
                 );
             }
             result
@@ -75,14 +83,13 @@ impl LUSolver {
             let result: CsVec<f64> = CsVec::new(
                 size,
                 (0..size).collect::<Vec<usize>>(),
-                vals.iter().map(|x| *x).collect::<Vec<f64>>(),
+                (0..size).map(|i| vals[i]).collect::<Vec<f64>>(),
             );
 
-            // sort by index
             result
         };
 
-        x
+        Ok(x)
     }
 }
 
@@ -118,6 +125,6 @@ impl Solver for NewtonSolver {
 
         // println!("{} iterations", i);
 
-        Ok(x)
+        x
     }
 }
