@@ -1,4 +1,7 @@
-use crate::{matrix::decomp::LUDecomp, netlist::Netlist};
+use crate::{
+    elements::base::{NonLinearElement, TimeVaringNonLinearElement},
+    matrix::decomp::LUDecomp,
+};
 use log::{error, info};
 use sprs::{CsMat, CsVec};
 
@@ -48,8 +51,7 @@ impl LUSolver {
 
                 result.append(
                     row,
-                    (get_or_default(v.get(*mapped)) - prev_sum)
-                        / get_or_default(l.get(row, row)),
+                    (get_or_default(v.get(*mapped)) - prev_sum) / get_or_default(l.get(row, row)),
                 );
             }
             result
@@ -87,12 +89,17 @@ impl LUSolver {
 }
 
 impl Solver for NewtonSolver {
-    fn solve(netlist: &Netlist) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
-        let e = netlist.get_equation();
-        let basic_mat_a = e.mat_a;
-        let basic_vec_b = e.vec_b;
+    fn solve_dc(
+        mat: &CsMat<f64>,
+        v: &CsVec<f64>,
+        non_linear_elements: &[Box<dyn NonLinearElement>],
+        time_varing_non_linear_elements: &[Box<dyn TimeVaringNonLinearElement>],
+    ) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
+        let basic_mat_a = mat;
+        let basic_vec_b = v;
+        let node_num_with_out_ground = basic_vec_b.dim();
 
-        let mut x = CsVec::empty(netlist.node_num - 1);
+        let mut x = CsVec::empty(node_num_with_out_ground);
 
         let mut iter_times = 0;
 
@@ -101,15 +108,19 @@ impl Solver for NewtonSolver {
             let mut mat_a = basic_mat_a.clone();
             let mut vec_b = basic_vec_b.clone();
 
-            for non_linear_element in &netlist.non_linear_elements {
+            for non_linear_element in non_linear_elements {
                 non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b, &x);
+            }
+
+            for time_varing_non_linear_element in time_varing_non_linear_elements {
+                time_varing_non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b, &x);
             }
 
             let x_next = LUSolver::solve(&mat_a, &vec_b)?;
 
             let l2_diff = {
                 let mut diff_acc = 0.;
-                for i in 0..(netlist.node_num - 1) {
+                for i in 0..node_num_with_out_ground {
                     let diff = get_or_default(x.get(i)) - get_or_default(x_next.get(i));
                     diff_acc += diff * diff;
                 }

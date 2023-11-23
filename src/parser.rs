@@ -1,5 +1,7 @@
 use crate::elements;
-use crate::elements::base::{Element, LinearElement, NonLinearElement};
+use crate::elements::base::{
+    BasicElement, Element, TimeVaringLinearElement, TimeVaringNonLinearElement,
+};
 use crate::elements::capacitor::Capacitor;
 use crate::elements::current_source::CurrentSource;
 use crate::elements::inductor::Inductor;
@@ -16,8 +18,9 @@ pub struct Parser {
 }
 
 pub struct ParsedInfo {
-    pub linear_elements: Vec<Box<dyn LinearElement>>,
-    pub non_linear_elements: Vec<Box<dyn NonLinearElement>>,
+    pub basic_elements: Vec<Box<dyn BasicElement>>,
+    pub time_varing_linear_elements: Vec<Box<dyn TimeVaringLinearElement>>,
+    pub time_varing_non_linear_elements: Vec<Box<dyn TimeVaringNonLinearElement>>,
     pub tasks: Vec<super::task::Task>,
     pub node_num: usize,
     pub max_node_id: usize,
@@ -38,8 +41,10 @@ impl Parser {
         let mut max_node_id = 0;
 
         let file = open_file(&self.file)?;
-        let mut linear_elements: Vec<Box<dyn LinearElement>> = Vec::new();
-        let mut non_linear_elements: Vec<Box<dyn NonLinearElement>> = Vec::new();
+        let mut basic_elements: Vec<Box<dyn BasicElement>> = Vec::new();
+        let mut time_varing_linear_elements: Vec<Box<dyn TimeVaringLinearElement>> = Vec::new();
+        let mut time_varing_non_linear_elements: Vec<Box<dyn TimeVaringNonLinearElement>> =
+            Vec::new();
 
         let mut tasks: Vec<super::task::Task> = Vec::new();
 
@@ -66,32 +71,32 @@ impl Parser {
                 'R' => {
                     let resistor = Resistor::parse(trimmed_line);
                     update_node_info_with_new_element(&resistor);
-                    linear_elements.push(Box::new(resistor));
+                    basic_elements.push(Box::new(resistor));
                 }
                 'V' => {
                     let voltage_source = VoltageSource::parse(trimmed_line);
                     update_node_info_with_new_element(&voltage_source);
-                    linear_elements.push(Box::new(voltage_source));
+                    basic_elements.push(Box::new(voltage_source));
                 }
                 'I' => {
                     let current_source = CurrentSource::parse(trimmed_line);
                     update_node_info_with_new_element(&current_source);
-                    linear_elements.push(Box::new(current_source));
+                    basic_elements.push(Box::new(current_source));
                 }
                 'C' => {
                     let capacitor = Capacitor::parse(trimmed_line);
                     update_node_info_with_new_element(&capacitor);
-                    non_linear_elements.push(Box::new(capacitor));
+                    time_varing_linear_elements.push(Box::new(capacitor));
                 }
                 'L' => {
                     let inductor = Inductor::parse(trimmed_line);
                     update_node_info_with_new_element(&inductor);
-                    non_linear_elements.push(Box::new(inductor));
+                    time_varing_linear_elements.push(Box::new(inductor));
                 }
                 'M' => {
                     let mosfet = Mosfet::parse(trimmed_line);
                     update_node_info_with_new_element(&mosfet);
-                    non_linear_elements.push(Box::new(mosfet));
+                    time_varing_non_linear_elements.push(Box::new(mosfet));
                 }
                 '.' => {
                     let mut words = trimmed_line.split_ascii_whitespace();
@@ -133,8 +138,9 @@ impl Parser {
         }
 
         Ok(ParsedInfo {
-            linear_elements,
-            non_linear_elements,
+            basic_elements,
+            time_varing_linear_elements,
+            time_varing_non_linear_elements,
             tasks,
             node_num: node_set.len(),
             max_node_id,

@@ -1,4 +1,7 @@
-use super::base::{Element, ElementType, MatrixSettable, MatrixUpdatable, NonLinearElement};
+use super::base::{
+    Element, ElementType, MatrixDcUpdatable, MatrixSettable, MatrixTransUpdatable,
+    TimeVaringNonLinearElement,
+};
 use crate::matrix::build::VecPushWithNodeId;
 use crate::netlist::NodeId;
 use std::collections::BTreeMap as Map;
@@ -198,7 +201,8 @@ impl Mosfet {
             MosfetMode::CutOff => 0.,
             MosfetMode::Linear => k * (v_gs - model.vth - v_ds),
             MosfetMode::Saturation => { k * (v_gs - model.vth).powi(2) * model.lambda }.abs(),
-        }.abs()
+        }
+        .abs()
     }
 
     pub fn get_ids(&self, v_gs: f64, v_ds: f64) -> f64 {
@@ -247,7 +251,7 @@ impl MatrixSettable for Mosfet {
     }
 }
 
-impl MatrixUpdatable for Mosfet {
+impl MatrixDcUpdatable for Mosfet {
     fn update_matrix_dc(
         &self,
         mat: &mut sprs::CsMat<f64>,
@@ -290,4 +294,14 @@ impl MatrixUpdatable for Mosfet {
     }
 }
 
-impl NonLinearElement for Mosfet {}
+impl MatrixTransUpdatable for Mosfet {
+    fn update_matrix_trans(
+        &self,
+        mat: &mut sprs::CsMat<f64>,
+        v: &mut sprs::CsVec<f64>,
+        x: &sprs::CsVec<f64>,
+    ) {
+    }
+}
+
+impl TimeVaringNonLinearElement for Mosfet {}

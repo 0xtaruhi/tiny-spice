@@ -1,4 +1,4 @@
-use super::base::{Element, ElementType, LinearElement, MatrixSettable, TwoPortElement};
+use super::base::{BasicElement, Element, ElementType, MatrixSettable, TwoPortElement};
 use crate::netlist::NodeId;
 
 #[derive(Debug)]
@@ -97,4 +97,4 @@ impl MatrixSettable for VoltageSource {
     }
 }
 
-impl LinearElement for VoltageSource {}
+impl BasicElement for VoltageSource {}

@@ -1,5 +1,5 @@
 use super::base::{
-    Element, ElementType, MatrixSettable, MatrixUpdatable, NonLinearElement, TwoPortElement,
+    Element, ElementType, MatrixDcUpdatable, MatrixSettable, MatrixTransUpdatable, TwoPortElement, TimeVaringLinearElement,
 };
 use crate::netlist::NodeId;
 
@@ -62,7 +62,7 @@ impl MatrixSettable for Capacitor {
     }
 }
 
-impl MatrixUpdatable for Capacitor {
+impl MatrixDcUpdatable for Capacitor {
     fn update_matrix_dc(
         &self,
         _mat: &mut sprs::CsMat<f64>,
@@ -72,4 +72,14 @@ impl MatrixUpdatable for Capacitor {
     }
 }
 
-impl NonLinearElement for Capacitor {}
+impl MatrixTransUpdatable for Capacitor {
+    fn update_matrix_trans(
+        &self,
+        mat: &mut sprs::CsMat<f64>,
+        v: &mut sprs::CsVec<f64>,
+        x: &sprs::CsVec<f64>,
+    ) {
+    }
+}
+
+impl TimeVaringLinearElement for Capacitor {}

@@ -14,7 +14,7 @@ pub enum ElementType {
     Mosfet,
 }
 
-pub trait Element {
+pub trait Element: MatrixSettable {
     fn get_name(&self) -> &str;
 
     fn get_type(&self) -> ElementType;
@@ -30,17 +30,29 @@ pub trait TwoPortElement: Element {
     fn get_base_value(&self) -> f64;
 }
 
-pub trait LinearElement: TwoPortElement + MatrixSettable {}
-
 pub trait MatrixSettable {
     fn set_matrix_dc(&self, mat: &mut MatrixTriplets<f64>, v: &mut VecItems<f64>);
+
+    fn set_matrix_trans(&self, mat: &mut MatrixTriplets<f64>, v: &mut VecItems<f64>) {
+        self.set_matrix_dc(mat, v);
+    }
 }
 
-pub trait MatrixUpdatable {
+pub trait MatrixDcUpdatable {
     fn update_matrix_dc(&self, mat: &mut CsMat<f64>, v: &mut CsVec<f64>, x: &CsVec<f64>);
 }
 
-pub trait NonLinearElement: Element + MatrixSettable + MatrixUpdatable {}
+pub trait MatrixTransUpdatable {
+    fn update_matrix_trans(&self, mat: &mut CsMat<f64>, v: &mut CsVec<f64>, x: &CsVec<f64>);
+}
+
+pub trait BasicElement: TwoPortElement + MatrixSettable {}
+
+pub trait NonLinearElement: Element + MatrixDcUpdatable {}
+
+pub trait TimeVaringLinearElement: Element + MatrixTransUpdatable {}
+
+pub trait TimeVaringNonLinearElement: Element + MatrixTransUpdatable + MatrixDcUpdatable {}
 
 pub fn general_linear_element_parse(s: &str) -> (String, NodeId, NodeId, f64) {
     let mut iter = s.split_whitespace();

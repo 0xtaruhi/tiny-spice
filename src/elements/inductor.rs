@@ -1,5 +1,6 @@
 use super::base::{
-    Element, ElementType, MatrixSettable, MatrixUpdatable, NonLinearElement, TwoPortElement,
+    Element, ElementType, MatrixSettable, MatrixTransUpdatable,
+    TimeVaringLinearElement, TwoPortElement,
 };
 use crate::netlist::NodeId;
 
@@ -72,14 +73,14 @@ impl MatrixSettable for Inductor {
     }
 }
 
-impl MatrixUpdatable for Inductor {
-    fn update_matrix_dc(
+impl MatrixTransUpdatable for Inductor {
+    fn update_matrix_trans(
         &self,
-        _mat: &mut sprs::CsMat<f64>,
-        _v: &mut sprs::CsVec<f64>,
-        _x: &sprs::CsVec<f64>,
+        mat: &mut sprs::CsMat<f64>,
+        v: &mut sprs::CsVec<f64>,
+        x: &sprs::CsVec<f64>,
     ) {
     }
 }
 
-impl NonLinearElement for Inductor {}
+impl TimeVaringLinearElement for Inductor {}

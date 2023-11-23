@@ -1,4 +1,4 @@
-use super::base::{Element, ElementType, LinearElement, MatrixSettable, TwoPortElement};
+use super::base::{Element, ElementType, BasicElement, MatrixSettable, TwoPortElement};
 use crate::matrix::build::VecPushWithNodeId;
 use crate::netlist::NodeId;
 
@@ -89,4 +89,4 @@ impl MatrixSettable for CurrentSource {
     }
 }
 
-impl LinearElement for CurrentSource {}
+impl BasicElement for CurrentSource {}

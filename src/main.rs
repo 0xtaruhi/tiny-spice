@@ -33,10 +33,15 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
         error!("Failed to parse file: {}", e);
         e
     })?;
-
     info!("Parse successful");
 
-    let netlist = netlist::Netlist::new(parsed_info);
+    let tasks = parsed_info.tasks;
+    let netlist = netlist::Netlist {
+        node_num: parsed_info.node_num,
+        basic_elements: parsed_info.basic_elements,
+        time_varing_linear_elements: parsed_info.time_varing_linear_elements,
+        time_varing_non_linear_elements: parsed_info.time_varing_non_linear_elements,
+    };
 
     let mode: analyze::Mode = {
         if let Some(m) = opts.mode {
@@ -54,7 +59,7 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Solving...");
 
-    analyzer.analyze().map_err(|e| {
+    analyzer.analyze(&tasks).map_err(|e| {
         error!("Failed to analyze: {}", e);
         e
     })?;
