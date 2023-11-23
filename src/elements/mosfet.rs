@@ -6,8 +6,8 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MosfetType {
-    NMOS,
-    PMOS,
+    Nmos,
+    Pmos,
 }
 
 lazy_static! {
@@ -91,28 +91,6 @@ impl MosfetModel {
 }
 
 impl Mosfet {
-    pub fn new(
-        name: String,
-        node_d: NodeId,
-        node_g: NodeId,
-        node_s: NodeId,
-        mos_type: MosfetType,
-        w: f64,
-        l: f64,
-        model_id: usize,
-    ) -> Self {
-        Self {
-            name,
-            node_d,
-            node_g,
-            node_s,
-            mos_type,
-            w,
-            l,
-            model_id,
-        }
-    }
-
     pub fn parse(s: &str) -> Self {
         let mut iter = s.split_whitespace();
         let name = iter.next().unwrap().to_string();
@@ -120,15 +98,24 @@ impl Mosfet {
         let node_g = iter.next().unwrap().parse::<NodeId>().unwrap();
         let node_s = iter.next().unwrap().parse::<NodeId>().unwrap();
         let mosfet_type = match iter.next().unwrap() {
-            "N" | "n" => MosfetType::NMOS,
-            "P" | "p" => MosfetType::PMOS,
+            "N" | "n" => MosfetType::Nmos,
+            "P" | "p" => MosfetType::Pmos,
             _ => panic!("Invalid mosfet type"),
         };
         let w = iter.next().unwrap().parse::<f64>().unwrap();
         let l = iter.next().unwrap().parse::<f64>().unwrap();
 
         let model_id = iter.next().unwrap().parse::<usize>().unwrap();
-        Self::new(name, node_d, node_g, node_s, mosfet_type, w, l, model_id)
+        Self {
+            name,
+            node_d,
+            node_g,
+            node_s,
+            mos_type: mosfet_type,
+            w,
+            l,
+            model_id,
+        }
     }
 
     fn get_model_by_id(model_id: usize) -> MosfetModel {
@@ -163,7 +150,7 @@ enum MosfetMode {
 impl Mosfet {
     fn get_mode(&self, v_gs: f64, v_ds: f64) -> MosfetMode {
         match self.mos_type {
-            MosfetType::NMOS => {
+            MosfetType::Nmos => {
                 if v_gs < self.get_model().vth {
                     MosfetMode::CutOff
                 } else if v_ds < v_gs - self.get_model().vth {
@@ -172,7 +159,7 @@ impl Mosfet {
                     MosfetMode::Saturation
                 }
             }
-            MosfetType::PMOS => {
+            MosfetType::Pmos => {
                 if v_gs > self.get_model().vth {
                     MosfetMode::CutOff
                 } else if v_ds > v_gs - self.get_model().vth {
@@ -223,10 +210,10 @@ impl Mosfet {
             MosfetMode::CutOff => 0.,
             MosfetMode::Linear => k * (v_gs - model.vth - v_ds * 0.5) * v_ds.abs(),
             MosfetMode::Saturation => match self.mos_type {
-                MosfetType::NMOS => {
+                MosfetType::Nmos => {
                     0.5 * k * (v_gs - model.vth).powi(2) * (1. + model.lambda * v_ds.abs())
                 }
-                MosfetType::PMOS => {
+                MosfetType::Pmos => {
                     -0.5 * k * (v_gs - model.vth).powi(2) * (1. + model.lambda * v_ds.abs())
                 }
             },

@@ -1,12 +1,18 @@
+use crate::netlist::NodeId;
+
 pub enum Task {
-    Plot(),
+    PlotVoltage(NodeId),
+    PlotCurrent(NodeId),
 }
 
 impl Task {
     fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
         match self {
-            Task::Plot() => {
-                println!("Plotting!");
+            Task::PlotVoltage(node_id) => {
+                println!("Plotting voltage at node {}", node_id);
+            }
+            Task::PlotCurrent(node_id) => {
+                println!("Plotting current at node {}", node_id);
             }
         }
         Ok(())

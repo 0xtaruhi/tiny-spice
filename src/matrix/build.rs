@@ -29,7 +29,7 @@ impl<T> MatrixTriplets<T> {
             rows: Vec::new(),
             cols: Vec::new(),
             vals: Vec::new(),
-            size: size,
+            size,
         }
     }
 

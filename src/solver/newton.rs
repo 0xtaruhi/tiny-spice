@@ -35,7 +35,7 @@ impl LUSolver {
 
         let b_star = {
             let mut result: CsVec<f64> = CsVec::empty(size);
-            for row in 0..size {
+            for (row, mapped) in reorder_map.iter().enumerate().take(size) {
                 let prev_sum = (0..row)
                     .map(|i| {
                         let l_val = get_or_default(l.get(row, i));
@@ -44,14 +44,11 @@ impl LUSolver {
                     })
                     .reduce(|acc, x| acc + x);
 
-                let prev_sum = if prev_sum.is_some() {
-                    prev_sum.unwrap()
-                } else {
-                    0.0
-                };
+                let prev_sum = if let Some(p) = prev_sum { p } else { 0.0 };
+
                 result.append(
                     row,
-                    (get_or_default(v.get(reorder_map[row])) - prev_sum)
+                    (get_or_default(v.get(*mapped)) - prev_sum)
                         / get_or_default(l.get(row, row)),
                 );
             }
@@ -70,11 +67,7 @@ impl LUSolver {
                     })
                     .reduce(|acc, x| acc + x);
 
-                let prev_sum = if prev_sum.is_some() {
-                    prev_sum.unwrap()
-                } else {
-                    0.0
-                };
+                let prev_sum = if let Some(p) = prev_sum { p } else { 0. };
 
                 vals[row] =
                     (get_or_default(b_star.get(row)) - prev_sum) / get_or_default(u.get(row, row));
@@ -116,7 +109,7 @@ impl Solver for NewtonSolver {
 
             let l2_diff = {
                 let mut diff_acc = 0.;
-                for i in  0..(netlist.node_num - 1) {
+                for i in 0..(netlist.node_num - 1) {
                     let diff = get_or_default(x.get(i)) - get_or_default(x_next.get(i));
                     diff_acc += diff * diff;
                 }

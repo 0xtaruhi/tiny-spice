@@ -6,6 +6,7 @@ use crate::elements::inductor::Inductor;
 use crate::elements::mosfet::{Mosfet, MosfetModel};
 use crate::elements::resistor::Resistor;
 use crate::elements::voltage_source::VoltageSource;
+use crate::task::Task;
 
 use std::io::BufRead;
 use std::{fs::File, path::PathBuf};
@@ -40,13 +41,15 @@ impl Parser {
         let mut linear_elements: Vec<Box<dyn LinearElement>> = Vec::new();
         let mut non_linear_elements: Vec<Box<dyn NonLinearElement>> = Vec::new();
 
+        let mut tasks: Vec<super::task::Task> = Vec::new();
+
         let lines = std::io::BufReader::new(file).lines();
 
         for (line, line_no) in lines.zip(1..) {
             let line = line?;
             let trimmed_line = line.trim();
 
-            if trimmed_line.starts_with("*") || trimmed_line.is_empty() {
+            if trimmed_line.starts_with('*') || trimmed_line.is_empty() {
                 continue;
             }
 
@@ -91,16 +94,25 @@ impl Parser {
                     non_linear_elements.push(Box::new(mosfet));
                 }
                 '.' => {
-                    let word = trimmed_line.split_whitespace().next().unwrap();
-                    match word {
+                    let mut words = trimmed_line.split_ascii_whitespace();
+                    let directive = words.next().unwrap();
+                    match directive.to_ascii_uppercase().as_str() {
                         ".MODEL" => {
                             let (model_id, mosfet_model) = MosfetModel::parse(trimmed_line);
                             elements::mosfet::add_mosfet_model(model_id, mosfet_model);
                         }
+                        ".PLOTNV" => {
+                            let node_id = words.next().unwrap().parse::<usize>().unwrap();
+                            tasks.push(Task::PlotVoltage(node_id));
+                        }
+                        ".PLOTIB" => {
+                            let node_id = words.next().unwrap().parse::<usize>().unwrap();
+                            tasks.push(Task::PlotCurrent(node_id));
+                        }
                         _ => {
                             return Err(format!(
                                 "Invalid directive: {}, {}:{}",
-                                word,
+                                directive,
                                 self.file.display(),
                                 line_no
                             )
@@ -121,11 +133,11 @@ impl Parser {
         }
 
         Ok(ParsedInfo {
-            linear_elements: linear_elements,
-            non_linear_elements: non_linear_elements,
-            tasks: vec![],
+            linear_elements,
+            non_linear_elements,
+            tasks,
             node_num: node_set.len(),
-            max_node_id: max_node_id,
+            max_node_id,
         })
     }
 }

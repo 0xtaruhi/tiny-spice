@@ -9,9 +9,9 @@ pub enum Mode {
     Unknown,
 }
 
-impl Into<Mode> for String {
-    fn into(self) -> Mode {
-        match self.to_ascii_uppercase().as_str() {
+impl From<String> for Mode {
+    fn from(val: String) -> Self {
+        match val.to_ascii_uppercase().as_str() {
             "D" | "DC" => Mode::DC,
             "T" | "TRANS" => Mode::Trans,
             _ => Mode::Unknown,
