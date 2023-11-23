@@ -73,7 +73,13 @@ impl MatrixSettable for Inductor {
 }
 
 impl MatrixUpdatable for Inductor {
-    fn update_matrix_dc(&self, _mat: &mut sprs::CsMat<f64>, _v: &mut sprs::CsVec<f64>) {}
+    fn update_matrix_dc(
+        &self,
+        _mat: &mut sprs::CsMat<f64>,
+        _v: &mut sprs::CsVec<f64>,
+        _x: &sprs::CsVec<f64>,
+    ) {
+    }
 }
 
 impl NonLinearElement for Inductor {}

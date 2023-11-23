@@ -97,8 +97,8 @@ impl Mosfet {
         node_g: NodeId,
         node_s: NodeId,
         mos_type: MosfetType,
-        l: f64,
         w: f64,
+        l: f64,
         model_id: usize,
     ) -> Self {
         Self {
@@ -107,8 +107,8 @@ impl Mosfet {
             node_g,
             node_s,
             mos_type,
-            l,
             w,
+            l,
             model_id,
         }
     }
@@ -124,11 +124,11 @@ impl Mosfet {
             "P" | "p" => MosfetType::PMOS,
             _ => panic!("Invalid mosfet type"),
         };
-        let l = iter.next().unwrap().parse::<f64>().unwrap();
         let w = iter.next().unwrap().parse::<f64>().unwrap();
+        let l = iter.next().unwrap().parse::<f64>().unwrap();
 
         let model_id = iter.next().unwrap().parse::<usize>().unwrap();
-        Self::new(name, node_d, node_g, node_s, mosfet_type, l, w, model_id)
+        Self::new(name, node_d, node_g, node_s, mosfet_type, w, l, model_id)
     }
 
     fn get_model_by_id(model_id: usize) -> MosfetModel {
@@ -239,42 +239,36 @@ impl MatrixSettable for Mosfet {
         v: &mut crate::matrix::build::VecItems<f64>,
     ) {
         mat.push_with_node_id(self.node_d, self.node_d, 0.);
-        mat.push_with_node_id(self.node_d, self.node_g, 0.);
         mat.push_with_node_id(self.node_d, self.node_s, 0.);
-        mat.push_with_node_id(self.node_g, self.node_d, 0.);
+        mat.push_with_node_id(self.node_s, self.node_d, 0.);
+        mat.push_with_node_id(self.node_s, self.node_s, 0.);
 
         v.push_with_node_id(self.node_d, 0.);
         v.push_with_node_id(self.node_s, 0.);
         v.push_with_node_id(self.node_g, 0.);
 
-        mat.push_with_node_id(self.node_g, self.node_d, 0.);
+        mat.push_with_node_id(self.node_d, self.node_g, 0.);
         mat.push_with_node_id(self.node_s, self.node_s, 0.);
         mat.push_with_node_id(self.node_d, self.node_s, 0.);
-        mat.push_with_node_id(self.node_g, self.node_s, 0.);
-    }
-}
-
-fn get_or_default<T>(x: Option<&T>) -> T
-where
-    T: Default + Clone,
-{
-    if let Some(val) = x {
-        val.clone()
-    } else {
-        Default::default()
+        mat.push_with_node_id(self.node_s, self.node_g, 0.);
     }
 }
 
 impl MatrixUpdatable for Mosfet {
-    fn update_matrix_dc(&self, mat: &mut sprs::CsMat<f64>, v: &mut sprs::CsVec<f64>) {
-        let v_g = get_or_default(v.get(self.node_d));
-        let v_d = get_or_default(v.get(self.node_d));
-        let v_s = get_or_default(v.get(self.node_d));
+    fn update_matrix_dc(
+        &self,
+        mat: &mut sprs::CsMat<f64>,
+        v: &mut sprs::CsVec<f64>,
+        x: &sprs::CsVec<f64>,
+    ) {
+        use crate::matrix::ext::{MatExt, VecExt};
+
+        let v_g = x.get_by_node_id(self.node_g);
+        let v_d = x.get_by_node_id(self.node_d);
+        let v_s = x.get_by_node_id(self.node_s);
 
         let v_gs = v_g - v_s;
         let v_ds = v_d - v_s;
-
-        use crate::matrix::ext::{MatExt, VecExt};
 
         {
             // Update gds
@@ -295,10 +289,10 @@ impl MatrixUpdatable for Mosfet {
         {
             // Update gm
             let gm = self.get_gm(v_gs, v_ds);
-            mat.add_by_node_id(self.node_g, self.node_d, gm);
+            mat.add_by_node_id(self.node_d, self.node_g, gm);
             mat.add_by_node_id(self.node_s, self.node_s, gm);
             mat.add_by_node_id(self.node_d, self.node_s, -gm);
-            mat.add_by_node_id(self.node_g, self.node_s, -gm);
+            mat.add_by_node_id(self.node_s, self.node_g, -gm);
         }
     }
 }

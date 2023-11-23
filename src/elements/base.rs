@@ -37,7 +37,7 @@ pub trait MatrixSettable {
 }
 
 pub trait MatrixUpdatable {
-    fn update_matrix_dc(&self, mat: &mut CsMat<f64>, v: &mut CsVec<f64>);
+    fn update_matrix_dc(&self, mat: &mut CsMat<f64>, v: &mut CsVec<f64>, x: &CsVec<f64>);
 }
 
 pub trait NonLinearElement: Element + MatrixSettable + MatrixUpdatable {}

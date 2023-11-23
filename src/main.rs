@@ -90,4 +90,15 @@ mod tests {
         };
         run(opts)
     }
+
+    #[test]
+    fn test_examples3() -> Result<(), Box<dyn std::error::Error>> {
+        let file = PathBuf::from("examples/test3.sp");
+        let opts = Opts {
+            mode: Some("dc".to_string()),
+            disp: None,
+            file,
+        };
+        run(opts)
+    }
 }

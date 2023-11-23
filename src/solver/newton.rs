@@ -1,8 +1,5 @@
-use crate::{
-    matrix::decomp::LUDecomp,
-    netlist::{Equation, Netlist},
-};
-use log::error;
+use crate::{matrix::decomp::LUDecomp, netlist::Netlist};
+use log::{error, info};
 use sprs::{CsMat, CsVec};
 
 use super::base::Solver;
@@ -99,40 +96,45 @@ impl LUSolver {
 impl Solver for NewtonSolver {
     fn solve(netlist: &Netlist) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
         let e = netlist.get_equation();
-        let mut mat_a = e.mat_a.clone();
-        let mut vec_b = e.vec_b.clone();
+        let basic_mat_a = e.mat_a;
+        let basic_vec_b = e.vec_b;
 
-        for non_linear_element in &netlist.non_linear_elements {
-            non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b);
+        let mut x = CsVec::empty(netlist.node_num - 1);
+
+        let mut iter_times = 0;
+
+        loop {
+            iter_times += 1;
+            let mut mat_a = basic_mat_a.clone();
+            let mut vec_b = basic_vec_b.clone();
+
+            for non_linear_element in &netlist.non_linear_elements {
+                non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b, &x);
+            }
+
+            let x_next = LUSolver::solve(&mat_a, &vec_b)?;
+
+            let l2_diff = {
+                let mut diff_acc = 0.;
+                for i in  0..(netlist.node_num - 1) {
+                    let diff = get_or_default(x.get(i)) - get_or_default(x_next.get(i));
+                    diff_acc += diff * diff;
+                }
+                diff_acc
+            };
+
+            x = x_next;
+
+            if l2_diff < 1e-6 {
+                break;
+            }
+
+            if iter_times > MAX_ITER {
+                return Err("Newton method failed to converge".into());
+            }
         }
 
-        let x = LUSolver::solve(&mat_a, &vec_b);
-
-        // let size = mat_a.cols();
-
-        // let mut x = sprs::CsVec::empty(size);
-        // let mut r = vec_b.clone().sub(&(&mat_a * &x));
-
-        // let mut i = 0;
-
-        // while r.l2_norm() > 1e-6 && i < MAX_ITER {
-        //     let d = mat_a.diag();
-        //     let d_inv = d.map(|x| 1.0 / x);
-
-        //     let mut delta_x = sprs::CsVec::empty(size);
-        //     for (index, value) in d_inv.iter() {
-        //         if let Some(other_value) = r.get(index) {
-        //             delta_x.append(index, value * other_value);
-        //         }
-        //     }
-
-        //     x = x + &delta_x;
-        //     r = vec_b.clone().sub(&(&mat_a * &x));
-        //     i += 1;
-        // }
-
-        // println!("{} iterations", i);
-
-        x
+        info!("Newton method converged in {} iterations", iter_times);
+        Ok(x)
     }
 }

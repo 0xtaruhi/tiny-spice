@@ -63,7 +63,13 @@ impl MatrixSettable for Capacitor {
 }
 
 impl MatrixUpdatable for Capacitor {
-    fn update_matrix_dc(&self, mat: &mut sprs::CsMat<f64>, v: &mut sprs::CsVec<f64>) {}
+    fn update_matrix_dc(
+        &self,
+        _mat: &mut sprs::CsMat<f64>,
+        _v: &mut sprs::CsVec<f64>,
+        _x: &sprs::CsVec<f64>,
+    ) {
+    }
 }
 
 impl NonLinearElement for Capacitor {}
