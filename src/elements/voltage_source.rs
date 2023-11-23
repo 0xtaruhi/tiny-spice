@@ -93,7 +93,7 @@ impl MatrixSettable for VoltageSource {
         mat.push_with_node_id(node_in, new_pos + 1, 1.);
         mat.push_with_node_id(node_out, new_pos + 1, -1.);
 
-        v.push((new_pos, self.get_base_value()));
+        v.insert(new_pos, self.get_base_value());
     }
 }
 

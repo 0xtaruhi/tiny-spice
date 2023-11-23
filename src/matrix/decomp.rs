@@ -25,7 +25,7 @@ where
         + Num
         + NumOps
         + fmt::Display
-        + Neg<Output = T>,
+        + Neg<Output = T>
 {
     type ResultType = CsMat<T>;
 
@@ -120,6 +120,12 @@ where
                     let u_col_col = get_or_default(u.get(col, col));
 
                     if u_col_col == Default::default() {
+                        debug!(
+                            "Mat: {}\n L: {}\n U: {}\n",
+                            self.to_dense(),
+                            l.to_dense(),
+                            u.to_dense()
+                        );
                         return Err("Matrix is singular".into());
                     }
 

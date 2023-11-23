@@ -1,0 +1,10 @@
+* PMOS
+* example 3
+
+VDD 2 0 DC 3
+Vin 1 0 DC 1
+M1 3 1 2 p 10e-6 0.35e-6 1
+R1 3 0 100000
+C1 2 0 1e-7
+
+.MODEL 1 VT -0.75 MU 5e-2 COX 0.3e-4 LAMBDA 0.05 CJ0 4.0e-14

@@ -48,7 +48,8 @@ impl Netlist {
 
         let mat_a = tri_mat.to_csr();
 
-        v.sort_by_key(|(i, _)| *i);
+        let mut v = v.iter().map(|(i, v)| (*i, *v)).collect::<Vec<(usize, f64)>>();
+        v.sort_by(|(i1, _), (i2, _)| i1.cmp(i2));        
 
         let vec_b = CsVec::new(
             mat.size,

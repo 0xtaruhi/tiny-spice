@@ -80,9 +80,8 @@ fn main() {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_examples2() -> Result<(), Box<dyn std::error::Error>> {
-        let file = PathBuf::from("examples/test2.sp");
+    fn dc_test(file: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
         let opts = Opts {
             mode: Some("dc".to_string()),
             disp: None,
@@ -92,13 +91,26 @@ mod tests {
     }
 
     #[test]
+    fn test_examples2() -> Result<(), Box<dyn std::error::Error>> {
+        let file = PathBuf::from("examples/test2.sp");
+        dc_test(file)
+    }
+
+    #[test]
     fn test_examples3() -> Result<(), Box<dyn std::error::Error>> {
         let file = PathBuf::from("examples/test3.sp");
-        let opts = Opts {
-            mode: Some("dc".to_string()),
-            disp: None,
-            file,
-        };
-        run(opts)
+        dc_test(file)
+    }
+
+    #[test]
+    fn test_examples4() -> Result<(), Box<dyn std::error::Error>> {
+        let file = PathBuf::from("examples/test4.sp");
+        dc_test(file)
+    }
+
+    #[test]
+    fn test_inverter() -> Result<(), Box<dyn std::error::Error>> {
+        let file = PathBuf::from("examples/inverter.sp");
+        dc_test(file)
     }
 }

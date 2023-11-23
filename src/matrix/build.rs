@@ -1,4 +1,5 @@
 use crate::netlist::NodeId;
+use std::collections::BTreeMap as Map;
 
 pub struct MatrixTriplets<T> {
     pub rows: Vec<usize>,
@@ -7,7 +8,7 @@ pub struct MatrixTriplets<T> {
     pub size: usize,
 }
 
-pub type VecItems<T> = Vec<(usize, T)>;
+pub type VecItems<T> = Map<usize, T>;
 
 pub trait VecPushWithNodeId<T> {
     fn push_with_node_id(&mut self, index: NodeId, val: T);
@@ -18,7 +19,7 @@ impl<T> VecPushWithNodeId<T> for VecItems<T> {
         if index == 0 {
             return;
         }
-        self.push((index - 1, val));
+        self.insert(index - 1, val);
     }
 }
 

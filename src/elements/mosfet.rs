@@ -4,7 +4,7 @@ use crate::netlist::NodeId;
 use std::collections::BTreeMap as Map;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum MosfetType {
     NMOS,
     PMOS,
@@ -197,8 +197,9 @@ impl Mosfet {
         match mos_mode {
             MosfetMode::CutOff => 0.,
             MosfetMode::Linear => k * v_ds,
-            MosfetMode::Saturation => k * (v_gs - model.vth) * (1. + model.lambda * v_ds),
+            MosfetMode::Saturation => k * (v_gs - model.vth) * (1. + model.lambda * v_ds.abs()),
         }
+        .abs()
     }
 
     pub fn get_gds(&self, v_gs: f64, v_ds: f64) -> f64 {
@@ -209,8 +210,8 @@ impl Mosfet {
         match mos_mode {
             MosfetMode::CutOff => 0.,
             MosfetMode::Linear => k * (v_gs - model.vth - v_ds),
-            MosfetMode::Saturation => 0.5 * k * model.lambda * (v_gs - model.vth).powi(2),
-        }
+            MosfetMode::Saturation => { k * (v_gs - model.vth).powi(2) * model.lambda }.abs(),
+        }.abs()
     }
 
     pub fn get_ids(&self, v_gs: f64, v_ds: f64) -> f64 {
@@ -220,10 +221,15 @@ impl Mosfet {
 
         match mos_mode {
             MosfetMode::CutOff => 0.,
-            MosfetMode::Linear => k * (v_gs - model.vth - v_ds * 0.5) * v_ds,
-            MosfetMode::Saturation => {
-                0.5 * k * (v_gs - model.vth).powi(2) * (1. + model.lambda * v_ds)
-            }
+            MosfetMode::Linear => k * (v_gs - model.vth - v_ds * 0.5) * v_ds.abs(),
+            MosfetMode::Saturation => match self.mos_type {
+                MosfetType::NMOS => {
+                    0.5 * k * (v_gs - model.vth).powi(2) * (1. + model.lambda * v_ds.abs())
+                }
+                MosfetType::PMOS => {
+                    -0.5 * k * (v_gs - model.vth).powi(2) * (1. + model.lambda * v_ds.abs())
+                }
+            },
         }
     }
 
