@@ -1,6 +1,7 @@
 pub type NodeId = usize;
 use crate::{
-    elements::base::{BasicElement, TimeVaringLinearElement, TimeVaringNonLinearElement},
+    elements::base::MatrixSettable,
+    elements::{BasicElement, TimeVaringLinearElement, TimeVaringNonLinearElement},
     matrix::build::{MatrixTriplets, VecItems},
 };
 use log::debug;
@@ -8,9 +9,9 @@ use sprs::{CsMat, CsVec, TriMat};
 
 pub struct Netlist {
     pub node_num: usize, // include ground node
-    pub basic_elements: Vec<Box<dyn BasicElement>>,
-    pub time_varing_linear_elements: Vec<Box<dyn TimeVaringLinearElement>>,
-    pub time_varing_non_linear_elements: Vec<Box<dyn TimeVaringNonLinearElement>>,
+    pub basic_elements: Vec<BasicElement>,
+    pub time_varing_linear_elements: Vec<TimeVaringLinearElement>,
+    pub time_varing_non_linear_elements: Vec<TimeVaringNonLinearElement>,
 }
 
 #[derive(Debug)]
@@ -65,7 +66,7 @@ impl Netlist {
                     .iter()
                     .for_each(|element| {
                         element.set_matrix_trans(&mut mat, &mut v);
-                    })
+                    });
             }
         }
 

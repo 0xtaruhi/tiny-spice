@@ -75,7 +75,7 @@ where
             return T::zero();
         }
         assert!(row <= self.dim());
-        
+
         let ref_cell = self.get(row - 1);
         if ref_cell.is_none() {
             return T::zero();

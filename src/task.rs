@@ -6,6 +6,7 @@ pub enum Task {
 }
 
 impl Task {
+    #[allow(dead_code)]
     fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             Task::PlotVoltage(node_id) => {

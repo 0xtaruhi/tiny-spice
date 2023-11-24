@@ -25,7 +25,7 @@ where
         + Num
         + NumOps
         + fmt::Display
-        + Neg<Output = T>
+        + Neg<Output = T>,
 {
     type ResultType = CsMat<T>;
 

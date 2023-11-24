@@ -1,5 +1,5 @@
 use crate::{
-    elements::base::{NonLinearElement, TimeVaringNonLinearElement},
+    elements::base::MatrixDcUpdatable, elements::TimeVaringNonLinearElement,
     matrix::decomp::LUDecomp,
 };
 use log::{error, info};
@@ -92,8 +92,7 @@ impl Solver for NewtonSolver {
     fn solve_dc(
         mat: &CsMat<f64>,
         v: &CsVec<f64>,
-        non_linear_elements: &[Box<dyn NonLinearElement>],
-        time_varing_non_linear_elements: &[Box<dyn TimeVaringNonLinearElement>],
+        time_varing_non_linear_elements: &[TimeVaringNonLinearElement],
     ) -> Result<sprs::CsVec<f64>, Box<dyn std::error::Error>> {
         let basic_mat_a = mat;
         let basic_vec_b = v;
@@ -107,10 +106,6 @@ impl Solver for NewtonSolver {
             iter_times += 1;
             let mut mat_a = basic_mat_a.clone();
             let mut vec_b = basic_vec_b.clone();
-
-            for non_linear_element in non_linear_elements {
-                non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b, &x);
-            }
 
             for time_varing_non_linear_element in time_varing_non_linear_elements {
                 time_varing_non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b, &x);

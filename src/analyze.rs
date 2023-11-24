@@ -68,13 +68,11 @@ impl Analyzer {
 
     fn analyze_dc(&self, _tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
         let e = self.netlist.get_equation_dc();
-        let non_linear_elements = vec![];
         let time_varing_non_linear_elements = &self.netlist.time_varing_non_linear_elements;
 
         let result = NewtonSolver::solve_dc(
             &e.mat_a,
             &e.vec_b,
-            non_linear_elements.as_slice(),
             time_varing_non_linear_elements.as_slice(),
         )?;
         let node_num = self.netlist.node_num;
@@ -91,7 +89,9 @@ impl Analyzer {
         Ok(())
     }
 
-    fn analyze_trans(&self, tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
+    fn analyze_trans(&self, _tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
+        let _e = self.netlist.get_equation_trans();
+
         Ok(())
     }
 }
