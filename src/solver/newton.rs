@@ -2,7 +2,7 @@ use crate::{
     elements::base::MatrixDcUpdatable, elements::TimeVaringNonLinearElement,
     matrix::decomp::LUDecomp,
 };
-use log::{error, info};
+use log::error;
 use sprs::{CsMat, CsVec};
 
 use super::base::Solver;
@@ -133,7 +133,7 @@ impl Solver for NewtonSolver {
             }
         }
 
-        info!("Newton method converged in {} iterations", iter_times);
+        // info!("Newton method converged in {} iterations", iter_times);
         Ok(x)
     }
 }

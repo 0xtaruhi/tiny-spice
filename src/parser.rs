@@ -105,8 +105,9 @@ impl Parser {
                             tasks.push(Task::PlotVoltage(node_id));
                         }
                         ".PLOTIB" => {
-                            let node_id = words.next().unwrap().parse::<usize>().unwrap();
-                            tasks.push(Task::PlotCurrent(node_id));
+                            let from = words.next().unwrap().parse::<usize>().unwrap();
+                            let to = words.next().unwrap().parse::<usize>().unwrap();
+                            tasks.push(Task::PlotCurrent(from, to));
                         }
                         _ => {
                             return Err(format!(

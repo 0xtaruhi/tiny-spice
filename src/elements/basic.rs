@@ -1,16 +1,35 @@
-use super::base::{Element, MatrixSettable};
+use sprs::{CsMat, CsVec};
+
+use super::base::{Element, MatrixSettable, MatrixTransUpdatable};
 use crate::matrix::build::VecPushWithNodeId;
+use crate::matrix::ext::{MatExt, VecExt};
 use crate::netlist::NodeId;
 
 #[derive(Debug)]
-enum SourceType {
+pub enum SourceType {
     AC,
     DC,
 }
 
 #[derive(Debug)]
-enum BasicElementType {
-    Resistor(f64),
+pub enum ResistorValue {
+    #[allow(dead_code)]
+    R(f64),
+    G(f64),
+}
+
+impl ResistorValue {
+    pub fn get_g(&self) -> f64 {
+        match self {
+            ResistorValue::R(val) => 1. / val,
+            ResistorValue::G(val) => val.to_owned(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum BasicElementType {
+    Resistor(ResistorValue),
     VoltageSource(SourceType, f64),
     CurrentSource(SourceType, f64),
 }
@@ -21,6 +40,27 @@ pub struct BasicElement {
     node_in: NodeId,
     node_out: NodeId,
     element_type: BasicElementType,
+}
+
+impl BasicElement {
+    pub fn new(
+        name: String,
+        node_in: NodeId,
+        node_out: NodeId,
+        element_type: BasicElementType,
+    ) -> Self {
+        Self {
+            name,
+            node_in,
+            node_out,
+            element_type,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn get_element_type(&self) -> &BasicElementType {
+        &self.element_type
+    }
 }
 
 impl Element for BasicElement {
@@ -34,19 +74,38 @@ impl Element for BasicElement {
 }
 
 impl BasicElement {
-    fn get_node_in(&self) -> NodeId {
+    pub(super) fn get_node_in(&self) -> NodeId {
         self.node_in
     }
 
-    fn get_node_out(&self) -> NodeId {
+    pub(super) fn get_node_out(&self) -> NodeId {
         self.node_out
     }
 
-    fn get_base_value(&self) -> f64 {
-        match self.element_type {
-            BasicElementType::Resistor(value) => value,
-            BasicElementType::VoltageSource(_, value) => value,
-            BasicElementType::CurrentSource(_, value) => value,
+    /// Get the base value of the element.
+    /// For a resistor, it returns the conductance.
+    pub fn get_base_value(&self) -> f64 {
+        match &self.element_type {
+            BasicElementType::Resistor(value) => value.get_g(),
+            BasicElementType::VoltageSource(_, value) => value.clone(),
+            BasicElementType::CurrentSource(_, value) => value.clone(),
+        }
+    }
+
+    pub fn set_base_value<T>(&mut self, value: T)
+    where
+        T: Into<f64>,
+    {
+        match &mut self.element_type {
+            BasicElementType::Resistor(val) => {
+                *val = ResistorValue::G(value.into());
+            }
+            BasicElementType::VoltageSource(_, val) => {
+                *val = value.into();
+            }
+            BasicElementType::CurrentSource(_, val) => {
+                *val = value.into();
+            }
         }
     }
 }
@@ -57,7 +116,7 @@ impl BasicElement {
         mat: &mut crate::matrix::build::MatrixTriplets<f64>,
         _v: &mut crate::matrix::build::VecItems<f64>,
     ) {
-        let g = 1. / self.get_base_value();
+        let g = self.get_base_value();
 
         let (node_in, node_out) = (self.get_node_in(), self.get_node_out());
 
@@ -96,6 +155,35 @@ impl BasicElement {
     }
 }
 
+impl BasicElement {
+    fn update_matrix_trans_resistor(
+        &self,
+        mat: &mut CsMat<f64>,
+        _v: &mut sprs::CsVec<f64>,
+        _x: &CsVec<f64>,
+    ) {
+        let g = self.get_base_value();
+        let (node_in, node_out) = (self.get_node_in(), self.get_node_out());
+
+        mat.add_by_node_id(node_in, node_out, -g);
+        mat.add_by_node_id(node_out, node_in, -g);
+        mat.add_by_node_id(node_in, node_in, g);
+        mat.add_by_node_id(node_out, node_out, g);
+    }
+
+    fn update_matrix_trans_current_source(
+        &self,
+        _mat: &mut CsMat<f64>,
+        v: &mut CsVec<f64>,
+        _x: &CsVec<f64>,
+    ) {
+        let (node_in, node_out) = (self.get_node_in(), self.get_node_out());
+        
+        v.add_by_node_id(node_in, -self.get_base_value());
+        v.add_by_node_id(node_out, self.get_base_value());
+    }
+}
+
 impl MatrixSettable for BasicElement {
     fn set_matrix_dc(
         &self,
@@ -119,6 +207,32 @@ impl MatrixSettable for BasicElement {
     }
 }
 
+impl MatrixTransUpdatable for BasicElement {
+    fn update_matrix_trans(
+        &self,
+        mat: &mut CsMat<f64>,
+        v: &mut sprs::CsVec<f64>,
+        x: &sprs::CsVec<f64>,
+    ) {
+        match self {
+            BasicElement {
+                element_type: BasicElementType::Resistor(_),
+                ..
+            } => self.update_matrix_trans_resistor(mat, v, x),
+            BasicElement {
+                element_type: BasicElementType::VoltageSource(_, _),
+                ..
+            } => {
+                todo!()
+            }
+            BasicElement {
+                element_type: BasicElementType::CurrentSource(_, _),
+                ..
+            } => self.update_matrix_trans_current_source(mat, v, x),
+        }
+    }
+}
+
 impl BasicElement {
     pub fn parse_resistor(s: &str) -> Option<Self> {
         let (name, node_in, node_out, val) = super::base::general_element_parse(s)?;
@@ -126,7 +240,7 @@ impl BasicElement {
             name,
             node_in,
             node_out,
-            element_type: BasicElementType::Resistor(val),
+            element_type: BasicElementType::Resistor(ResistorValue::G(1. / val)),
         })
     }
 

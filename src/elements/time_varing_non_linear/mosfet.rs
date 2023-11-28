@@ -1,4 +1,4 @@
-use super::super::base::{MatrixDcUpdatable, MatrixSettable, MatrixTransUpdatable};
+use super::super::base::{MatrixDcUpdatable, MatrixSettable};
 use crate::matrix::build::VecPushWithNodeId;
 use crate::netlist::NodeId;
 
@@ -245,15 +245,5 @@ impl MatrixDcUpdatable for MosfetElementType {
             mat.add_by_node_id(self.node_d, self.node_s, -gm);
             mat.add_by_node_id(self.node_s, self.node_g, -gm);
         }
-    }
-}
-
-impl MatrixTransUpdatable for MosfetElementType {
-    fn update_matrix_trans(
-        &self,
-        _mat: &mut sprs::CsMat<f64>,
-        _v: &mut sprs::CsVec<f64>,
-        _x: &sprs::CsVec<f64>,
-    ) {
     }
 }

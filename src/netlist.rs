@@ -1,7 +1,10 @@
 pub type NodeId = usize;
 use crate::{
     elements::base::MatrixSettable,
-    elements::{BasicElement, TimeVaringLinearElement, TimeVaringNonLinearElement},
+    elements::{
+        companion::CompanionModel, BasicElement, TimeVaringLinearElement,
+        TimeVaringNonLinearElement,
+    },
     matrix::build::{MatrixTriplets, VecItems},
 };
 use log::debug;
@@ -26,14 +29,18 @@ enum EquationType {
 
 impl Netlist {
     pub fn get_equation_dc(&self) -> Equation {
-        self.get_equation_impl(EquationType::Dc)
+        self.get_equation_impl(EquationType::Dc, &[])
     }
 
-    pub fn get_equation_trans(&self) -> Equation {
-        self.get_equation_impl(EquationType::Trans)
+    pub fn get_equation_trans(&self, companion_models: &[CompanionModel]) -> Equation {
+        self.get_equation_impl(EquationType::Trans, companion_models)
     }
 
-    fn get_equation_impl(&self, eq_type: EquationType) -> Equation {
+    fn get_equation_impl(
+        &self,
+        eq_type: EquationType,
+        companion_models: &[CompanionModel],
+    ) -> Equation {
         let mut mat = MatrixTriplets::new(self.node_num - 1);
         let mut v = VecItems::new();
 
@@ -58,15 +65,15 @@ impl Netlist {
                     element.set_matrix_trans(&mut mat, &mut v);
                 });
 
-                self.time_varing_linear_elements.iter().for_each(|element| {
-                    element.set_matrix_trans(&mut mat, &mut v);
-                });
-
                 self.time_varing_non_linear_elements
                     .iter()
                     .for_each(|element| {
                         element.set_matrix_trans(&mut mat, &mut v);
                     });
+
+                companion_models.iter().for_each(|m| {
+                    m.set_matrix_trans(&mut mat, &mut v);
+                })
             }
         }
 

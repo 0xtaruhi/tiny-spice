@@ -7,3 +7,4 @@ pub use time_varing_linear::TimeVaringLinearElement;
 pub mod time_varing_non_linear;
 pub use time_varing_non_linear::mosfet::MosfetModel;
 pub use time_varing_non_linear::TimeVaringNonLinearElement;
+pub mod companion;

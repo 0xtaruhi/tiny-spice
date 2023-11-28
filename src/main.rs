@@ -14,6 +14,7 @@ mod netlist;
 mod parser;
 mod solver;
 mod task;
+mod plot;
 
 #[derive(Parser, Debug)]
 #[clap(author = "0xtaruhi", version, about)]
@@ -23,6 +24,9 @@ struct Opts {
 
     #[clap(short, long)]
     disp: Option<usize>,
+
+    #[clap(short, long)]
+    final_time: Option<f64>,
 
     file: PathBuf,
 }
@@ -55,6 +59,13 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
     analyzer.set_mode(mode);
     if let Some(d) = opts.disp {
         analyzer.set_disp_digits(d);
+    }
+
+    if let Some(t) = opts.final_time {
+        if mode != analyze::Mode::Trans {
+            return Err("Final time can only be specified in Trans mode".into());
+        }
+        analyzer.set_final_time(t);
     }
 
     info!("Solving...");
@@ -90,7 +101,19 @@ mod tests {
         let opts = Opts {
             mode: Some("dc".to_string()),
             disp: None,
+            final_time: None,
             file,
+        };
+        run(opts)
+    }
+
+    fn trans_test(file: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+        let opts = Opts {
+            mode: Some("trans".to_string()) ,
+            disp: None, 
+            final_time: Some(1.),
+            file
         };
         run(opts)
     }
@@ -117,5 +140,11 @@ mod tests {
     fn test_inverter() -> Result<(), Box<dyn std::error::Error>> {
         let file = PathBuf::from("examples/inverter.sp");
         dc_test(file)
+    }
+
+    #[test]
+    fn test_trans_example1() -> Result<(), Box<dyn std::error::Error>> {
+        let file = PathBuf::from("examples/trans_test1.sp");
+        trans_test(file)
     }
 }

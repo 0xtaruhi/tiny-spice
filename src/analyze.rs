@@ -1,4 +1,9 @@
-use crate::task::Task;
+use log::debug;
+use sprs::CsVec;
+
+use crate::elements::base::MatrixTransUpdatable;
+use crate::elements::companion::CompanionModel;
+use crate::task::{Task, TaskResult};
 
 use super::netlist::Netlist;
 use super::solver::base::Solver;
@@ -24,6 +29,7 @@ impl From<String> for Mode {
 struct AnalyzerConfig {
     mode: Mode,
     disp_digits: usize,
+    final_time: f64,
 }
 
 impl Default for AnalyzerConfig {
@@ -31,6 +37,7 @@ impl Default for AnalyzerConfig {
         Self {
             mode: Mode::Unknown,
             disp_digits: 5,
+            final_time: 10.,
         }
     }
 }
@@ -56,6 +63,10 @@ impl Analyzer {
         self.config.disp_digits = disp_digits;
     }
 
+    pub fn set_final_time(&mut self, final_time: f64) {
+        self.config.final_time = final_time;
+    }
+
     pub fn analyze(&self, tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
         match self.config.mode {
             Mode::DC => self.analyze_dc(tasks),
@@ -67,7 +78,7 @@ impl Analyzer {
     }
 
     fn analyze_dc(&self, _tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
-        let e = self.netlist.get_equation_dc();
+        let e: crate::netlist::Equation = self.netlist.get_equation_dc();
         let time_varing_non_linear_elements = &self.netlist.time_varing_non_linear_elements;
 
         let result = NewtonSolver::solve_dc(
@@ -89,8 +100,60 @@ impl Analyzer {
         Ok(())
     }
 
-    fn analyze_trans(&self, _tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
-        let _e = self.netlist.get_equation_trans();
+    fn analyze_trans(&self, tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
+        let delta_t = 1e-2;
+        let final_time = self.config.final_time;
+
+        let mut companion_models = self
+            .netlist
+            .time_varing_linear_elements
+            .iter()
+            .map(|e| CompanionModel::new_from_linear(e))
+            .collect::<Vec<_>>();
+
+        let basic_eq = self.netlist.get_equation_trans(&companion_models);
+        let (basic_mat_a, basic_vec_b) = (basic_eq.mat_a, basic_eq.vec_b);
+
+        let mut x = CsVec::empty(basic_vec_b.dim());
+        let mut current_time = 0.;
+
+        let mut time_stamps = Vec::new();
+        let mut task_results = tasks.iter().map(|t| TaskResult::new(t)).collect::<Vec<_>>();
+
+        while current_time < final_time {
+            let mut mat_a = basic_mat_a.clone();
+            let mut vec_b = basic_vec_b.clone();
+
+            companion_models.iter_mut().for_each(|m| {
+                m.update_matrix_trans(&mut mat_a, &mut vec_b, &x);
+            });
+
+            debug!("mat_a: {}", mat_a.to_dense());
+            debug!("vec_b: {}", vec_b.to_dense());
+
+            x = NewtonSolver::solve_dc(
+                &mat_a,
+                &vec_b,
+                self.netlist.time_varing_non_linear_elements.as_slice(),
+            )?;
+
+            debug!("x: {}", x.to_dense());
+
+            time_stamps.push(current_time);
+            for task in &mut task_results {
+                task.update(&x);
+            }
+
+            current_time += delta_t;
+            companion_models.iter_mut().for_each(|m| {
+                m.update_current(&x);
+                m.update_companion_elements(delta_t);
+            });
+        }
+
+        task_results.iter().for_each(|task| {
+            task.run(&time_stamps);
+        });
 
         Ok(())
     }

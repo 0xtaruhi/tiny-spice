@@ -3,7 +3,7 @@ use crate::netlist::NodeId;
 use super::base::{Element, MatrixSettable};
 
 #[derive(Debug)]
-enum TimeVaringLinearElementType {
+pub enum TimeVaringLinearElementType {
     Capacitor(f64),
     Inductor(f64),
 }
@@ -14,6 +14,27 @@ pub struct TimeVaringLinearElement {
     node_in: NodeId,
     node_out: NodeId,
     element_type: TimeVaringLinearElementType,
+}
+
+impl TimeVaringLinearElement {
+    #[allow(dead_code)]
+    pub fn new(
+        name: String,
+        node_in: NodeId,
+        node_out: NodeId,
+        element_type: TimeVaringLinearElementType,
+    ) -> Self {
+        Self {
+            name,
+            node_in,
+            node_out,
+            element_type,
+        }
+    }
+
+    pub fn get_element_type(&self) -> &TimeVaringLinearElementType {
+        &self.element_type
+    }
 }
 
 impl Element for TimeVaringLinearElement {
@@ -27,16 +48,16 @@ impl Element for TimeVaringLinearElement {
 }
 
 impl TimeVaringLinearElement {
-    fn get_node_in(&self) -> NodeId {
+    pub(super) fn get_node_in(&self) -> NodeId {
         self.node_in
     }
 
-    fn get_node_out(&self) -> NodeId {
+    pub(super) fn get_node_out(&self) -> NodeId {
         self.node_out
     }
 
     #[allow(dead_code)]
-    fn get_base_value(&self) -> f64 {
+    pub(super) fn get_base_value(&self) -> f64 {
         match self.element_type {
             TimeVaringLinearElementType::Capacitor(value) => value,
             TimeVaringLinearElementType::Inductor(value) => value,

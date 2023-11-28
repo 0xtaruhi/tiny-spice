@@ -1,6 +1,6 @@
 use crate::netlist::NodeId;
 
-use super::base::{Element, MatrixDcUpdatable, MatrixSettable, MatrixTransUpdatable};
+use super::base::{Element, MatrixDcUpdatable, MatrixSettable};
 
 pub mod mosfet;
 use mosfet::{MosfetElementType, MosfetType};
@@ -89,21 +89,6 @@ impl MatrixSettable for TimeVaringNonLinearElement {
         match self.element_type {
             TimeVaringNonLinearElementType::Mosfet(ref mosfet) => {
                 mosfet.set_matrix_dc(mat, v);
-            }
-        }
-    }
-}
-
-impl MatrixTransUpdatable for TimeVaringNonLinearElement {
-    fn update_matrix_trans(
-        &self,
-        mat: &mut sprs::CsMat<f64>,
-        v: &mut sprs::CsVec<f64>,
-        x: &sprs::CsVec<f64>,
-    ) {
-        match self.element_type {
-            TimeVaringNonLinearElementType::Mosfet(ref mosfet) => {
-                mosfet.update_matrix_trans(mat, v, x);
             }
         }
     }
