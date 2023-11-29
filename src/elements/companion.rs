@@ -156,7 +156,7 @@ impl<'a> CompanionModel<'a> {
         }
     }
 
-    pub fn update_companion_elements(&mut self, delta_t: f64) {
+    pub fn update_companion_elements(&mut self, x: &CsVec<f64> ,delta_t: f64) {
         let base_value = self.get_base_value();
         let current = self.current;
         match self.get_time_varing_element() {
@@ -165,10 +165,13 @@ impl<'a> CompanionModel<'a> {
                     todo!()
                 }
                 TimeVaringLinearElementType::Inductor(_val) => {
+                    let v_diff = x.get_by_node_id(element.get_node_in())
+                        - x.get_by_node_id(element.get_node_out());
+
                     let resistor = self.get_companion_resistor_mut();
-                    resistor.set_base_value(delta_t / base_value);
+                    resistor.set_base_value(delta_t / (2. * base_value));
                     let current_source = self.get_companion_current_source_mut();
-                    current_source.set_base_value(current);
+                    current_source.set_base_value(current + delta_t * v_diff / (2. * base_value));
                 }
             },
             _ => todo!(),

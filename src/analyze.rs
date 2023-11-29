@@ -147,7 +147,7 @@ impl Analyzer {
             current_time += delta_t;
             companion_models.iter_mut().for_each(|m| {
                 m.update_current(&x);
-                m.update_companion_elements(delta_t);
+                m.update_companion_elements(&x, delta_t);
             });
         }
 
