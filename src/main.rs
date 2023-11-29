@@ -12,9 +12,9 @@ mod elements;
 mod matrix;
 mod netlist;
 mod parser;
+mod plot;
 mod solver;
 mod task;
-mod plot;
 
 #[derive(Parser, Debug)]
 #[clap(author = "0xtaruhi", version, about)]
@@ -110,10 +110,10 @@ mod tests {
     fn trans_test(file: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
         let opts = Opts {
-            mode: Some("trans".to_string()) ,
-            disp: None, 
+            mode: Some("trans".to_string()),
+            disp: None,
             final_time: Some(1.),
-            file
+            file,
         };
         run(opts)
     }

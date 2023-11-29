@@ -156,7 +156,7 @@ impl<'a> CompanionModel<'a> {
         }
     }
 
-    pub fn update_companion_elements(&mut self, x: &CsVec<f64> ,delta_t: f64) {
+    pub fn update_companion_elements(&mut self, x: &CsVec<f64>, delta_t: f64) {
         let base_value = self.get_base_value();
         let current = self.current;
         match self.get_time_varing_element() {

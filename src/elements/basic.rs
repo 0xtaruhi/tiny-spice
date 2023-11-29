@@ -178,7 +178,7 @@ impl BasicElement {
         _x: &CsVec<f64>,
     ) {
         let (node_in, node_out) = (self.get_node_in(), self.get_node_out());
-        
+
         v.add_by_node_id(node_in, -self.get_base_value());
         v.add_by_node_id(node_out, self.get_base_value());
     }
