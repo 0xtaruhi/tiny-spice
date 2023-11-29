@@ -71,11 +71,15 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Solving...");
 
+    let start = Instant::now();
     analyzer.analyze(&tasks).map_err(|e| {
         error!("Failed to analyze: {}", e);
         e
     })?;
     info!("Analysis successful");
+    
+    let elapsed = start.elapsed();
+    info!("Elapsed: {:.2?}", elapsed);
     Ok(())
 }
 
@@ -85,12 +89,7 @@ fn main() {
     if !opts.file.exists() {
         panic!("File does not exist!");
     }
-
-    let start = Instant::now();
     run(opts).expect("Failed to run");
-    let elapsed = start.elapsed();
-
-    info!("Elapsed: {:.2?}", elapsed);
 }
 
 #[cfg(test)]
