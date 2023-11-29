@@ -4,6 +4,7 @@ const IMAGE_WIDTH: u32 = 640;
 const IMAGE_HEIGHT: u32 = 480;
 
 const LINE_COLOR: RGBColor = RGBColor(220, 50, 90);
+const POINT_COLOR: RGBColor = RGBColor(250, 192, 61);
 
 pub struct PlotInfo<'a, 'b> {
     x_values: &'a [f64],
@@ -39,9 +40,6 @@ pub fn plot(plot_info: PlotInfo, file_name: &str) {
         y_label,
         caption,
     } = plot_info;
-    let root = BitMapBackend::new(file_name, (IMAGE_WIDTH, IMAGE_HEIGHT)).into_drawing_area();
-    root.fill(&WHITE).unwrap();
-
     let get_min_max = |values: &[f64]| {
         let mut min = values[0];
         let mut max = values[0];
@@ -56,13 +54,16 @@ pub fn plot(plot_info: PlotInfo, file_name: &str) {
         (min, max)
     };
 
+    let root = SVGBackend::new(file_name, (IMAGE_WIDTH, IMAGE_HEIGHT)).into_drawing_area();
+    root.fill(&WHITE).unwrap();
+
     let (min_y, max_y) = get_min_max(y_values);
 
     let mut chart = ChartBuilder::on(&root)
-        .caption(caption, ("sans-serif", 30).into_font())
+        .caption(caption, ("sans-serif", 30))
         .margin(10)
-        .x_label_area_size(40)
-        .y_label_area_size(40)
+        .x_label_area_size(30)
+        .y_label_area_size(30)
         .build_cartesian_2d(x_values[0]..x_values[x_values.len() - 1], min_y..max_y)
         .unwrap();
 
@@ -78,5 +79,14 @@ pub fn plot(plot_info: PlotInfo, file_name: &str) {
             x_values.iter().zip(y_values.iter()).map(|(x, y)| (*x, *y)),
             &LINE_COLOR,
         ))
+        .unwrap();
+
+    chart
+        .draw_series(
+            x_values
+                .iter()
+                .zip(y_values.iter())
+                .map(|(x, y)| Circle::new((*x, *y), 1, POINT_COLOR.filled())),
+        )
         .unwrap();
 }

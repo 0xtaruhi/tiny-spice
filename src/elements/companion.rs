@@ -77,11 +77,17 @@ impl InitCompanionElements for TimeVaringNonLinearElement {
 
 impl TimeVaringLinearElement {
     fn is_capacitor(&self) -> bool {
-        matches!(self.get_element_type(), TimeVaringLinearElementType::Capacitor(_))
+        matches!(
+            self.get_element_type(),
+            TimeVaringLinearElementType::Capacitor(_)
+        )
     }
 
     fn is_inductor(&self) -> bool {
-        matches!(self.get_element_type(), TimeVaringLinearElementType::Inductor(_))
+        matches!(
+            self.get_element_type(),
+            TimeVaringLinearElementType::Inductor(_)
+        )
     }
 }
 
@@ -209,7 +215,7 @@ impl<'a> CompanionModel<'a> {
                         - x.get_by_node_id(element.get_node_out());
 
                     let resistor = self.get_companion_resistor_mut();
-                    resistor.set_base_value((2. * base_value) / delta_t);
+                    resistor.set_resistor_value(ResistorValue::R(delta_t / (2. * base_value)));
                     let voltage_source = self.get_companion_voltage_source_mut();
                     voltage_source.set_base_value(v_diff + delta_t * current / (2. * base_value));
                 }
@@ -218,7 +224,7 @@ impl<'a> CompanionModel<'a> {
                         - x.get_by_node_id(element.get_node_out());
 
                     let resistor = self.get_companion_resistor_mut();
-                    resistor.set_base_value(delta_t / (2. * base_value));
+                    resistor.set_resistor_value(ResistorValue::G(delta_t / (2. * base_value)));
                     let current_source = self.get_companion_current_source_mut();
                     current_source.set_base_value(current + delta_t * v_diff / (2. * base_value));
                 }
@@ -229,9 +235,7 @@ impl<'a> CompanionModel<'a> {
 
     pub fn update_current(&mut self, x: &CsVec<f64>) {
         let (node_in, node_out) = match self.get_time_varing_element() {
-            TimeVaringElement::Linear(element) => {
-                (element.get_node_in(), element.get_node_out())
-            }
+            TimeVaringElement::Linear(element) => (element.get_node_in(), element.get_node_out()),
             _ => todo!(),
         };
 

@@ -77,7 +77,7 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
         e
     })?;
     info!("Analysis successful");
-    
+
     let elapsed = start.elapsed();
     info!("Elapsed: {:.2?}", elapsed);
     Ok(())

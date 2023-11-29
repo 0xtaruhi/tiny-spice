@@ -1,3 +1,5 @@
+use std::ops::Sub;
+
 use log::debug;
 use sprs::CsVec;
 
@@ -101,7 +103,7 @@ impl Analyzer {
     }
 
     fn analyze_trans(&self, tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
-        let delta_t = 1e-2;
+        let mut delta_t = 1e-2;
         let final_time = self.config.final_time;
 
         let mut companion_models = self
@@ -121,23 +123,40 @@ impl Analyzer {
         let mut task_results = tasks.iter().map(TaskResult::new).collect::<Vec<_>>();
 
         while current_time < final_time {
-            let mut mat_a = basic_mat_a.clone();
-            let mut vec_b = basic_vec_b.clone();
+            loop {
+                if current_time + delta_t > final_time {
+                    delta_t = final_time - current_time;
+                }
 
-            companion_models.iter_mut().for_each(|m| {
-                m.update_companion_elements(&x, delta_t);
-                m.update_matrix_trans(&mut mat_a, &mut vec_b, &x);
-            });
+                let mut mat_a = basic_mat_a.clone();
+                let mut vec_b = basic_vec_b.clone();
 
-            debug!("mat_a: {}", mat_a.to_dense());
-            debug!("vec_b: {}", vec_b.to_dense());
+                companion_models.iter_mut().for_each(|m| {
+                    m.update_companion_elements(&x, delta_t);
+                    m.update_matrix_trans(&mut mat_a, &mut vec_b, &x);
+                });
 
-            x = NewtonSolver::solve_dc(
-                &mat_a,
-                &vec_b,
-                self.netlist.time_varing_non_linear_elements.as_slice(),
-            )?;
+                debug!("mat_a: {}", mat_a.to_dense());
+                debug!("vec_b: {}", vec_b.to_dense());
 
+                let attemp_x = NewtonSolver::solve_dc(
+                    &mat_a,
+                    &vec_b,
+                    self.netlist.time_varing_non_linear_elements.as_slice(),
+                )?;
+
+                if attemp_x.sub(&x).l1_norm() < 1e-1 || delta_t < 1e-4 {
+                    x = attemp_x;
+                    current_time += delta_t;
+
+                    delta_t *= 2.;
+                    break;
+                } else {
+                    delta_t /= 2.;
+                }
+            }
+
+            debug!("delta_t: {}", delta_t);
             debug!("x: {}", x.to_dense());
 
             time_stamps.push(current_time);
@@ -145,7 +164,6 @@ impl Analyzer {
                 task.update(&x);
             }
 
-            current_time += delta_t;
             companion_models.iter_mut().for_each(|m| {
                 m.update_current(&x);
             });

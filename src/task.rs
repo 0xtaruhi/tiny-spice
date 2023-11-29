@@ -48,7 +48,8 @@ impl TaskResult {
     pub fn run(&self, time_stamps: &[f64]) {
         match self {
             TaskResult::Voltage { node_id, values } => {
-                let file_name = format!("voltage_node_{}.png", node_id);
+                let file_name = format!("voltage_node_{}.svg", node_id);
+
                 let caption = format!("Voltage at node {}", node_id);
                 let plot_info =
                     PlotInfo::new(time_stamps, values, "Time / s", "Voltage / V", &caption);

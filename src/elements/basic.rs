@@ -126,6 +126,15 @@ impl BasicElement {
             }
         }
     }
+
+    pub fn set_resistor_value(&mut self, value: ResistorValue) {
+        match &mut self.element_type {
+            BasicElementType::Resistor(val) => {
+                *val = value;
+            }
+            _ => panic!("This element is not a resistor."),
+        }
+    }
 }
 
 impl BasicElement {
