@@ -41,12 +41,29 @@ pub fn plot(plot_info: PlotInfo, file_name: &str) {
     } = plot_info;
     let root = BitMapBackend::new(file_name, (IMAGE_WIDTH, IMAGE_HEIGHT)).into_drawing_area();
     root.fill(&WHITE).unwrap();
+
+    let get_min_max = |values: &[f64]| {
+        let mut min = values[0];
+        let mut max = values[0];
+        for &value in values.iter() {
+            if value < min {
+                min = value;
+            }
+            if value > max {
+                max = value;
+            }
+        }
+        (min, max)
+    };
+
+    let (min_y, max_y) = get_min_max(y_values);
+
     let mut chart = ChartBuilder::on(&root)
         .caption(caption, ("sans-serif", 30).into_font())
         .margin(10)
         .x_label_area_size(40)
         .y_label_area_size(40)
-        .build_cartesian_2d(x_values[0]..x_values[x_values.len() - 1], 0f64..10f64)
+        .build_cartesian_2d(x_values[0]..x_values[x_values.len() - 1], min_y..max_y)
         .unwrap();
 
     chart
