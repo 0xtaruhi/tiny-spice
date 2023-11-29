@@ -154,7 +154,9 @@ impl<'a> CompanionModel<'a> {
         match self.element {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
                 TimeVaringLinearElementType::Inductor(_) => &mut self.companion_elements[1],
-                TimeVaringLinearElementType::Capacitor(_) => panic!("The companion model of an capacitor does not have a current source"),
+                TimeVaringLinearElementType::Capacitor(_) => {
+                    panic!("The companion model of an capacitor does not have a current source")
+                }
             },
             _ => panic!("Not a linear element"),
         }
@@ -166,7 +168,9 @@ impl<'a> CompanionModel<'a> {
         match self.element {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
                 TimeVaringLinearElementType::Inductor(_) => &self.companion_elements[1],
-                TimeVaringLinearElementType::Capacitor(_) => panic!("The companion model of an capacitor does not have a current source"),
+                TimeVaringLinearElementType::Capacitor(_) => {
+                    panic!("The companion model of an capacitor does not have a current source")
+                }
             },
             _ => panic!("Not a linear element"),
         }
@@ -177,7 +181,9 @@ impl<'a> CompanionModel<'a> {
 
         match self.element {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
-                TimeVaringLinearElementType::Inductor(_) => panic!("The companion model of a inductor does not have a voltage source"),
+                TimeVaringLinearElementType::Inductor(_) => {
+                    panic!("The companion model of a inductor does not have a voltage source")
+                }
                 TimeVaringLinearElementType::Capacitor(_) => &mut self.companion_elements[1],
             },
             _ => panic!("Not a linear element"),
@@ -189,7 +195,9 @@ impl<'a> CompanionModel<'a> {
 
         match self.element {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
-                TimeVaringLinearElementType::Inductor(_) => panic!("The companion model of a inductor does not have a voltage source"),
+                TimeVaringLinearElementType::Inductor(_) => {
+                    panic!("The companion model of a inductor does not have a voltage source")
+                }
                 TimeVaringLinearElementType::Capacitor(_) => &self.companion_elements[1],
             },
             _ => panic!("Not a linear element"),
@@ -205,7 +213,7 @@ impl<'a> CompanionModel<'a> {
                 TimeVaringLinearElementType::Capacitor(_val) => {
                     let v_diff = x.get_by_node_id(element.get_node_in())
                         - x.get_by_node_id(element.get_node_out());
-                    
+
                     let resistor = self.get_companion_resistor_mut();
                     resistor.set_base_value((2. * base_value) / delta_t);
                     let voltage_source = self.get_companion_voltage_source_mut();

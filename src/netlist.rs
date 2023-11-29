@@ -1,5 +1,4 @@
 pub type NodeId = usize;
-use std::cell::Cell;
 use crate::{
     elements::base::MatrixSettable,
     elements::{
@@ -10,6 +9,7 @@ use crate::{
 };
 use log::debug;
 use sprs::{CsMat, CsVec, TriMat};
+use std::cell::Cell;
 
 #[derive(Clone)]
 pub struct Netlist {
