@@ -1,3 +1,4 @@
+use log::info;
 use sprs::CsVec;
 
 use crate::{
@@ -54,6 +55,7 @@ impl TaskResult {
                 let plot_info =
                     PlotInfo::new(time_stamps, values, "Time / s", "Voltage / V", &caption);
                 plot(plot_info, &file_name);
+                info!("Plotted voltage at node {} done. Total {} points.", node_id, values.len());
             }
             TaskResult::Current { .. } => {
                 todo!()

@@ -1,6 +1,7 @@
 use std::ops::Sub;
+use std::time::Instant;
 
-use log::debug;
+use log::{debug, info};
 use sprs::CsVec;
 
 use crate::elements::base::MatrixTransUpdatable;
@@ -70,6 +71,7 @@ impl Analyzer {
     }
 
     pub fn analyze(&self, tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
+        info!("Analysis started");
         match self.config.mode {
             Mode::DC => self.analyze_dc(tasks),
             Mode::Trans => self.analyze_trans(tasks),
@@ -80,6 +82,7 @@ impl Analyzer {
     }
 
     fn analyze_dc(&self, _tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
+        let start = Instant::now();
         let e: crate::netlist::Equation = self.netlist.get_equation_dc();
         let time_varing_non_linear_elements = &self.netlist.time_varing_non_linear_elements;
 
@@ -98,11 +101,15 @@ impl Analyzer {
                 width = self.config.disp_digits
             );
         }
+        let elapsed = start.elapsed();
+        info!("Elapsed: {:.2?}", elapsed);
 
         Ok(())
     }
 
     fn analyze_trans(&self, tasks: &[Task]) -> Result<(), Box<dyn std::error::Error>> {
+        let start = Instant::now();
+
         let mut delta_t = 1e-2;
         let final_time = self.config.final_time;
 
@@ -168,6 +175,9 @@ impl Analyzer {
                 m.update_current(&x);
             });
         }
+
+        let elapsed = start.elapsed();
+        info!("Elapsed: {:.2?}", elapsed);
 
         task_results.iter().for_each(|task| {
             task.run(&time_stamps);

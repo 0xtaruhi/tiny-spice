@@ -1,7 +1,6 @@
 use clap::Parser;
 use std::cell::Cell;
 use std::path::PathBuf;
-use std::time::Instant;
 
 use log::{error, info};
 
@@ -69,17 +68,11 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
         analyzer.set_final_time(t);
     }
 
-    info!("Solving...");
-
-    let start = Instant::now();
     analyzer.analyze(&tasks).map_err(|e| {
         error!("Failed to analyze: {}", e);
         e
     })?;
     info!("Analysis successful");
-
-    let elapsed = start.elapsed();
-    info!("Elapsed: {:.2?}", elapsed);
     Ok(())
 }
 
