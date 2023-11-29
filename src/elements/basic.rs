@@ -105,8 +105,8 @@ impl BasicElement {
     pub fn get_base_value(&self) -> f64 {
         match &self.element_type {
             BasicElementType::Resistor(value) => value.get_g(),
-            BasicElementType::VoltageSource(_, value, ..) => value.clone(),
-            BasicElementType::CurrentSource(_, value) => value.clone(),
+            BasicElementType::VoltageSource(_, value, ..) => *value,
+            BasicElementType::CurrentSource(_, value) => *value,
         }
     }
 

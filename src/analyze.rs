@@ -118,7 +118,7 @@ impl Analyzer {
         let mut current_time = 0.;
 
         let mut time_stamps = Vec::new();
-        let mut task_results = tasks.iter().map(|t| TaskResult::new(t)).collect::<Vec<_>>();
+        let mut task_results = tasks.iter().map(TaskResult::new).collect::<Vec<_>>();
 
         while current_time < final_time {
             let mut mat_a = basic_mat_a.clone();
