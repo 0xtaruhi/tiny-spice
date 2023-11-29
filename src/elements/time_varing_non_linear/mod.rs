@@ -5,12 +5,12 @@ use super::base::{Element, MatrixDcUpdatable, MatrixSettable};
 pub mod mosfet;
 use mosfet::{MosfetElementType, MosfetType};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum TimeVaringNonLinearElementType {
     Mosfet(mosfet::MosfetElementType),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TimeVaringNonLinearElement {
     name: String,
     element_type: TimeVaringNonLinearElementType,

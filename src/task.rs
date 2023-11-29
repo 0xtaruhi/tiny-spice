@@ -51,7 +51,7 @@ impl TaskResult {
                 let file_name = format!("voltage_node_{}.png", node_id);
                 let caption = format!("Voltage at node {}", node_id);
                 let plot_info =
-                    PlotInfo::new(&time_stamps, &values, "Time / s", "Current / A", &caption);
+                    PlotInfo::new(&time_stamps, &values, "Time / s", "Voltage / V", &caption);
                 plot(plot_info, &file_name);
             }
             TaskResult::Current { .. } => {

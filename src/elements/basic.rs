@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use sprs::{CsMat, CsVec};
 
 use super::base::{Element, MatrixSettable, MatrixTransUpdatable};
@@ -5,13 +7,13 @@ use crate::matrix::build::VecPushWithNodeId;
 use crate::matrix::ext::{MatExt, VecExt};
 use crate::netlist::NodeId;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SourceType {
     AC,
     DC,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ResistorValue {
     #[allow(dead_code)]
     R(f64),
@@ -27,14 +29,30 @@ impl ResistorValue {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BasicElementType {
     Resistor(ResistorValue),
-    VoltageSource(SourceType, f64),
+    VoltageSource(SourceType, f64, Cell<NodeId>),
     CurrentSource(SourceType, f64),
 }
 
-#[derive(Debug)]
+impl BasicElementType {
+    pub fn get_extra_node(&self) -> NodeId {
+        match self {
+            BasicElementType::VoltageSource(_, _, node) => node.get(),
+            _ => panic!("This element doesn't have extra node."),
+        }
+    }
+
+    pub fn set_extra_node(&self, node: NodeId) {
+        match self {
+            BasicElementType::VoltageSource(_, _, node_cell) => node_cell.set(node),
+            _ => panic!("This element doesn't have extra node."),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct BasicElement {
     name: String,
     node_in: NodeId,
@@ -87,7 +105,7 @@ impl BasicElement {
     pub fn get_base_value(&self) -> f64 {
         match &self.element_type {
             BasicElementType::Resistor(value) => value.get_g(),
-            BasicElementType::VoltageSource(_, value) => value.clone(),
+            BasicElementType::VoltageSource(_, value, ..) => value.clone(),
             BasicElementType::CurrentSource(_, value) => value.clone(),
         }
     }
@@ -100,7 +118,7 @@ impl BasicElement {
             BasicElementType::Resistor(val) => {
                 *val = ResistorValue::G(value.into());
             }
-            BasicElementType::VoltageSource(_, val) => {
+            BasicElementType::VoltageSource(_, val, ..) => {
                 *val = value.into();
             }
             BasicElementType::CurrentSource(_, val) => {
@@ -133,6 +151,8 @@ impl BasicElement {
     ) {
         let new_pos = mat.size;
         mat.extend_size(1);
+
+        self.element_type.set_extra_node(new_pos + 1);
 
         let (node_in, node_out) = (self.get_node_in(), self.get_node_out());
 
@@ -182,6 +202,17 @@ impl BasicElement {
         v.add_by_node_id(node_in, -self.get_base_value());
         v.add_by_node_id(node_out, self.get_base_value());
     }
+
+    fn update_matrix_trans_voltage_source(
+        &self,
+        _mat: &mut CsMat<f64>,
+        v: &mut CsVec<f64>,
+        _x: &CsVec<f64>,
+    ) {
+        let extra_pos = self.element_type.get_extra_node();
+
+        v.add_by_node_id(extra_pos, self.get_base_value());
+    }
 }
 
 impl MatrixSettable for BasicElement {
@@ -196,7 +227,7 @@ impl MatrixSettable for BasicElement {
                 ..
             } => self.set_matrix_dc_resistor(mat, v),
             BasicElement {
-                element_type: BasicElementType::VoltageSource(_, _),
+                element_type: BasicElementType::VoltageSource(..),
                 ..
             } => self.set_matrix_dc_voltage_source(mat, v),
             BasicElement {
@@ -220,11 +251,9 @@ impl MatrixTransUpdatable for BasicElement {
                 ..
             } => self.update_matrix_trans_resistor(mat, v, x),
             BasicElement {
-                element_type: BasicElementType::VoltageSource(_, _),
+                element_type: BasicElementType::VoltageSource(..),
                 ..
-            } => {
-                todo!()
-            }
+            } => self.update_matrix_trans_voltage_source(mat, v, x),
             BasicElement {
                 element_type: BasicElementType::CurrentSource(_, _),
                 ..
@@ -260,7 +289,7 @@ impl BasicElement {
             name,
             node_in,
             node_out,
-            element_type: BasicElementType::VoltageSource(source_type, value),
+            element_type: BasicElementType::VoltageSource(source_type, value, Cell::new(0)),
         })
     }
 

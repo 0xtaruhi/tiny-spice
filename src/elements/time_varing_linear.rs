@@ -2,13 +2,13 @@ use crate::netlist::NodeId;
 
 use super::base::{Element, MatrixSettable};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TimeVaringLinearElementType {
     Capacitor(f64),
     Inductor(f64),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TimeVaringLinearElement {
     name: String,
     node_in: NodeId,

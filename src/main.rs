@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::cell::Cell;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -41,7 +42,7 @@ fn run(opts: Opts) -> Result<(), Box<dyn std::error::Error>> {
 
     let tasks = parsed_info.tasks;
     let netlist = netlist::Netlist {
-        node_num: parsed_info.node_num,
+        node_num: Cell::new(parsed_info.node_num),
         basic_elements: parsed_info.basic_elements,
         time_varing_linear_elements: parsed_info.time_varing_linear_elements,
         time_varing_non_linear_elements: parsed_info.time_varing_non_linear_elements,
@@ -145,6 +146,12 @@ mod tests {
     #[test]
     fn test_trans_example1() -> Result<(), Box<dyn std::error::Error>> {
         let file = PathBuf::from("examples/trans_test1.sp");
+        trans_test(file)
+    }
+
+    #[test]
+    fn test_trans_example2() -> Result<(), Box<dyn std::error::Error>> {
+        let file = PathBuf::from("examples/trans_test2.sp");
         trans_test(file)
     }
 }

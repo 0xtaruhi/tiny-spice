@@ -1,4 +1,5 @@
 pub type NodeId = usize;
+use std::cell::Cell;
 use crate::{
     elements::base::MatrixSettable,
     elements::{
@@ -10,8 +11,9 @@ use crate::{
 use log::debug;
 use sprs::{CsMat, CsVec, TriMat};
 
+#[derive(Clone)]
 pub struct Netlist {
-    pub node_num: usize, // include ground node
+    pub node_num: Cell<usize>, // include ground node
     pub basic_elements: Vec<BasicElement>,
     pub time_varing_linear_elements: Vec<TimeVaringLinearElement>,
     pub time_varing_non_linear_elements: Vec<TimeVaringNonLinearElement>,
@@ -28,6 +30,14 @@ enum EquationType {
 }
 
 impl Netlist {
+    pub fn append_new_node(&self) -> NodeId {
+        let node_num = self.node_num.get();
+        self.node_num.set(node_num + 1);
+        node_num
+    }
+}
+
+impl Netlist {
     pub fn get_equation_dc(&self) -> Equation {
         self.get_equation_impl(EquationType::Dc, &[])
     }
@@ -41,7 +51,7 @@ impl Netlist {
         eq_type: EquationType,
         companion_models: &[CompanionModel],
     ) -> Equation {
-        let mut mat = MatrixTriplets::new(self.node_num - 1);
+        let mut mat = MatrixTriplets::new(self.node_num.get() - 1);
         let mut v = VecItems::new();
 
         match eq_type {

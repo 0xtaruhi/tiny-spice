@@ -5,7 +5,7 @@ use crate::netlist::NodeId;
 use std::collections::BTreeMap as Map;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub(super) enum MosfetType {
     Nmos,
     Pmos,
@@ -20,7 +20,7 @@ pub struct MosfetModel {
     cj0: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(super) struct MosfetElementType {
     pub(super) mos_type: MosfetType,
     pub(super) node_d: NodeId,

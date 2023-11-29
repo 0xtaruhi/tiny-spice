@@ -1,8 +1,10 @@
 use sprs::CsVec;
+use std::cell::Cell;
 
 use crate::elements::base::Element;
 use crate::elements::basic::ResistorValue;
 use crate::matrix::ext::VecExt;
+use crate::netlist::Netlist;
 
 use super::base::{MatrixSettable, MatrixTransUpdatable};
 use super::basic::{BasicElement, BasicElementType, SourceType};
@@ -24,14 +26,28 @@ pub struct CompanionModel<'a> {
 }
 
 pub trait InitCompanionElements {
-    fn init_companion_elements(&self) -> Vec<BasicElement>;
+    fn init_companion_elements(&self, netlist: &Netlist) -> Vec<BasicElement>;
 }
 
 impl InitCompanionElements for TimeVaringLinearElement {
-    fn init_companion_elements(&self) -> Vec<BasicElement> {
+    fn init_companion_elements(&self, netlist: &Netlist) -> Vec<BasicElement> {
         match self.get_element_type() {
             TimeVaringLinearElementType::Capacitor(_val) => {
-                todo!()
+                let new_node = netlist.append_new_node();
+                vec![
+                    BasicElement::new(
+                        format!("{}-R", self.get_name()),
+                        self.get_node_in(),
+                        new_node,
+                        BasicElementType::Resistor(ResistorValue::R(1e10)),
+                    ),
+                    BasicElement::new(
+                        format!("{}-V", self.get_name()),
+                        new_node,
+                        self.get_node_out(),
+                        BasicElementType::VoltageSource(SourceType::DC, 0., Cell::new(0)),
+                    ),
+                ]
             }
             TimeVaringLinearElementType::Inductor(_val) => {
                 vec![
@@ -54,7 +70,7 @@ impl InitCompanionElements for TimeVaringLinearElement {
 }
 
 impl InitCompanionElements for TimeVaringNonLinearElement {
-    fn init_companion_elements(&self) -> Vec<BasicElement> {
+    fn init_companion_elements(&self, _netlist: &Netlist) -> Vec<BasicElement> {
         todo!()
     }
 }
@@ -76,8 +92,8 @@ impl TimeVaringLinearElement {
 }
 
 impl<'a> CompanionModel<'a> {
-    pub fn new_from_linear(element: &'a TimeVaringLinearElement) -> Self {
-        let companion_elements = element.init_companion_elements();
+    pub fn new_from_linear(element: &'a TimeVaringLinearElement, netlist: &Netlist) -> Self {
+        let companion_elements = element.init_companion_elements(netlist);
         Self {
             element: TimeVaringElement::Linear(element),
             current: 0.,
@@ -137,8 +153,8 @@ impl<'a> CompanionModel<'a> {
 
         match self.element {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
-                TimeVaringLinearElementType::Capacitor(_) => &mut self.companion_elements[1],
                 TimeVaringLinearElementType::Inductor(_) => &mut self.companion_elements[1],
+                TimeVaringLinearElementType::Capacitor(_) => panic!("The companion model of an capacitor does not have a current source"),
             },
             _ => panic!("Not a linear element"),
         }
@@ -149,8 +165,32 @@ impl<'a> CompanionModel<'a> {
 
         match self.element {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
-                TimeVaringLinearElementType::Capacitor(_) => &self.companion_elements[1],
                 TimeVaringLinearElementType::Inductor(_) => &self.companion_elements[1],
+                TimeVaringLinearElementType::Capacitor(_) => panic!("The companion model of an capacitor does not have a current source"),
+            },
+            _ => panic!("Not a linear element"),
+        }
+    }
+
+    fn get_companion_voltage_source_mut(&mut self) -> &mut BasicElement {
+        assert!(self.is_capacitor() || self.is_inductor());
+
+        match self.element {
+            TimeVaringElement::Linear(ref element) => match element.get_element_type() {
+                TimeVaringLinearElementType::Inductor(_) => panic!("The companion model of a inductor does not have a voltage source"),
+                TimeVaringLinearElementType::Capacitor(_) => &mut self.companion_elements[1],
+            },
+            _ => panic!("Not a linear element"),
+        }
+    }
+
+    fn get_companion_voltage_source(&self) -> &BasicElement {
+        assert!(self.is_capacitor() || self.is_inductor());
+
+        match self.element {
+            TimeVaringElement::Linear(ref element) => match element.get_element_type() {
+                TimeVaringLinearElementType::Inductor(_) => panic!("The companion model of a inductor does not have a voltage source"),
+                TimeVaringLinearElementType::Capacitor(_) => &self.companion_elements[1],
             },
             _ => panic!("Not a linear element"),
         }
@@ -159,10 +199,17 @@ impl<'a> CompanionModel<'a> {
     pub fn update_companion_elements(&mut self, x: &CsVec<f64>, delta_t: f64) {
         let base_value = self.get_base_value();
         let current = self.current;
+
         match self.get_time_varing_element() {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
                 TimeVaringLinearElementType::Capacitor(_val) => {
-                    todo!()
+                    let v_diff = x.get_by_node_id(element.get_node_in())
+                        - x.get_by_node_id(element.get_node_out());
+                    
+                    let resistor = self.get_companion_resistor_mut();
+                    resistor.set_base_value((2. * base_value) / delta_t);
+                    let voltage_source = self.get_companion_voltage_source_mut();
+                    voltage_source.set_base_value(v_diff + delta_t * current / (2. * base_value));
                 }
                 TimeVaringLinearElementType::Inductor(_val) => {
                     let v_diff = x.get_by_node_id(element.get_node_in())
@@ -191,7 +238,10 @@ impl<'a> CompanionModel<'a> {
         match self.get_time_varing_element() {
             TimeVaringElement::Linear(ref element) => match element.get_element_type() {
                 TimeVaringLinearElementType::Capacitor(_val) => {
-                    todo!()
+                    let v_r = v_diff - self.get_companion_voltage_source().get_base_value();
+                    let resistor = self.get_companion_resistor();
+
+                    new_current = resistor.get_base_value() * v_r;
                 }
                 TimeVaringLinearElementType::Inductor(_val) => {
                     let resistor = self.get_companion_resistor();

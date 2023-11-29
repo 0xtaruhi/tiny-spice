@@ -86,7 +86,7 @@ impl Analyzer {
             &e.vec_b,
             time_varing_non_linear_elements.as_slice(),
         )?;
-        let node_num = self.netlist.node_num;
+        let node_num = self.netlist.node_num.get();
 
         for node_id in 0..(node_num - 1) {
             println!(
@@ -108,7 +108,7 @@ impl Analyzer {
             .netlist
             .time_varing_linear_elements
             .iter()
-            .map(|e| CompanionModel::new_from_linear(e))
+            .map(|e| CompanionModel::new_from_linear(e, &self.netlist))
             .collect::<Vec<_>>();
 
         let basic_eq = self.netlist.get_equation_trans(&companion_models);
@@ -125,6 +125,7 @@ impl Analyzer {
             let mut vec_b = basic_vec_b.clone();
 
             companion_models.iter_mut().for_each(|m| {
+                m.update_companion_elements(&x, delta_t);
                 m.update_matrix_trans(&mut mat_a, &mut vec_b, &x);
             });
 
@@ -147,7 +148,6 @@ impl Analyzer {
             current_time += delta_t;
             companion_models.iter_mut().for_each(|m| {
                 m.update_current(&x);
-                m.update_companion_elements(&x, delta_t);
             });
         }
 
