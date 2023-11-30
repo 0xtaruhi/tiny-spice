@@ -63,7 +63,7 @@ pub fn plot(plot_info: PlotInfo, file_name: &str) {
         .caption(caption, ("sans-serif", 30))
         .margin(10)
         .x_label_area_size(30)
-        .y_label_area_size(30)
+        .y_label_area_size(40)
         .build_cartesian_2d(x_values[0]..x_values[x_values.len() - 1], min_y..max_y)
         .unwrap();
 
