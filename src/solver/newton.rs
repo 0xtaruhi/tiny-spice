@@ -25,8 +25,14 @@ where
 struct LUSolver {}
 
 impl LUSolver {
-    fn solve(mat: &CsMat<f64>, v: &CsVec<f64>) -> Result<CsVec<f64>, Box<dyn std::error::Error>> {
-        let reorder_map = mat.get_reorder_map();
+    fn solve(mat: &CsMat<f64>, v: &CsVec<f64>, reorder_map: &mut Option<Vec<usize>>) -> Result<CsVec<f64>, Box<dyn std::error::Error>> {
+        let reorder_map = if let Some(map) = reorder_map {
+            map
+        } else {
+            let map = mat.get_reorder_map();
+            *reorder_map = Some(map.clone());
+            reorder_map.as_mut().unwrap()
+        };
 
         let (l, u) = mat.lu_decomp(Some(&reorder_map)).map_err(|e| {
             error!("LU decomposition failed: {}", e);
@@ -102,6 +108,8 @@ impl Solver for NewtonSolver {
 
         let mut iter_times = 0;
 
+        let mut reorder_map = None;
+
         loop {
             iter_times += 1;
             let mut mat_a = basic_mat_a.clone();
@@ -111,7 +119,7 @@ impl Solver for NewtonSolver {
                 time_varing_non_linear_element.update_matrix_dc(&mut mat_a, &mut vec_b, &x);
             }
 
-            let x_next = LUSolver::solve(&mat_a, &vec_b)?;
+            let x_next = LUSolver::solve(&mat_a, &vec_b, &mut reorder_map)?;
 
             let l2_diff = {
                 let mut diff_acc = 0.;
