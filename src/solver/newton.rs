@@ -25,7 +25,11 @@ where
 struct LUSolver {}
 
 impl LUSolver {
-    fn solve(mat: &CsMat<f64>, v: &CsVec<f64>, reorder_map: &mut Option<Vec<usize>>) -> Result<CsVec<f64>, Box<dyn std::error::Error>> {
+    fn solve(
+        mat: &CsMat<f64>,
+        v: &CsVec<f64>,
+        reorder_map: &mut Option<Vec<usize>>,
+    ) -> Result<CsVec<f64>, Box<dyn std::error::Error>> {
         let reorder_map = if let Some(map) = reorder_map {
             map
         } else {
@@ -34,7 +38,7 @@ impl LUSolver {
             reorder_map.as_mut().unwrap()
         };
 
-        let (l, u) = mat.lu_decomp(Some(&reorder_map)).map_err(|e| {
+        let (l, u) = mat.lu_decomp(Some(reorder_map)).map_err(|e| {
             error!("LU decomposition failed: {}", e);
             e
         })?;
